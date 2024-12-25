@@ -152,6 +152,7 @@ async function signAndSendTransaction(
  * @param description - Description of the token
  * @param imageUrl - URL of the token image
  * @param options - Optional token options (twitter, telegram, website, initialLiquiditySOL, slippageBps, priorityFee)
+ * @param providedMintKeypair - Optional pre-generated mint keypair (useful for grinded pump addresses)
  * @returns - Signature of the transaction, mint address and metadata URI, if successful, else error
  */
 export async function launchPumpFunToken(
@@ -161,9 +162,10 @@ export async function launchPumpFunToken(
   description: string,
   imageUrl: string,
   options?: PumpFunTokenOptions,
+  providedMintKeypair?: Keypair,
 ): Promise<PumpfunLaunchResponse> {
   try {
-    const mintKeypair = Keypair.generate();
+    const mintKeypair = providedMintKeypair ?? Keypair.generate();
     const metadataResponse = await uploadMetadata(
       tokenName,
       tokenTicker,
