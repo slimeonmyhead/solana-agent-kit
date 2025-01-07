@@ -92,6 +92,7 @@ import { create_proposal } from "../tools/squads_multisig/create_proposal";
 import { approve_proposal } from "../tools/squads_multisig/approve_proposal";
 import { execute_transaction } from "../tools/squads_multisig/execute_proposal";
 import { reject_proposal } from "../tools/squads_multisig/reject_proposal";
+import { BaseWallet } from "../wallet/EmbedWallet";
 
 /**
  * Main class for interacting with Solana blockchain
@@ -99,13 +100,13 @@ import { reject_proposal } from "../tools/squads_multisig/reject_proposal";
  *
  * @class SolanaAgentKit
  * @property {Connection} connection - Solana RPC connection
- * @property {Keypair} wallet - Wallet keypair for signing transactions
+ * @property {BaseWallet} wallet - Wallet for signing transactions
  * @property {PublicKey} wallet_address - Public key of the wallet
  * @property {Config} config - Configuration object
  */
 export class SolanaAgentKit {
   public connection: Connection;
-  public wallet: Keypair;
+  public wallet: BaseWallet;
   public wallet_address: PublicKey;
   public config: Config;
 
@@ -131,10 +132,10 @@ export class SolanaAgentKit {
     this.connection = new Connection(
       rpc_url || "https://api.mainnet-beta.solana.com",
     );
-    this.wallet = Keypair.fromSecretKey(bs58.decode(private_key));
+
+    this.wallet = new BaseWallet(private_key);
     this.wallet_address = this.wallet.publicKey;
 
-    // Handle both old and new patterns
     if (typeof configOrKey === "string" || configOrKey === null) {
       this.config = { OPENAI_API_KEY: configOrKey || "" };
     } else {
