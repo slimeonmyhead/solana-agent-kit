@@ -1,5 +1,5 @@
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
-import { BN } from "@coral-xyz/anchor";
+import { BN, Wallet } from "@coral-xyz/anchor";
 import bs58 from "bs58";
 import Decimal from "decimal.js";
 import { DEFAULT_OPTIONS } from "../constants";
@@ -92,7 +92,6 @@ import { create_proposal } from "../tools/squads_multisig/create_proposal";
 import { approve_proposal } from "../tools/squads_multisig/approve_proposal";
 import { execute_transaction } from "../tools/squads_multisig/execute_proposal";
 import { reject_proposal } from "../tools/squads_multisig/reject_proposal";
-import { BaseWallet } from "../wallet/EmbedWallet";
 import { WalletAdapter } from "../types";
 
 /**
@@ -111,14 +110,6 @@ export class SolanaAgentKit {
   public wallet_address: PublicKey;
   public config: Config;
 
-  /**
-   * @deprecated Using openai_api_key directly in constructor is deprecated.
-   * Please use the new constructor with Config object instead:
-   * @example
-   * const agent = new SolanaAgentKit(privateKey, rpcUrl, {
-   *   OPENAI_API_KEY: 'your-key'
-   * });
-   */
   constructor(
     wallet: WalletAdapter,
     rpc_url: string,
@@ -136,6 +127,16 @@ export class SolanaAgentKit {
     } else {
       this.config = configOrKey;
     }
+  }
+
+  getAnchorWallet(): Wallet {
+    const adapter = this.wallet;
+    return {
+      publicKey: adapter.publicKey,
+      signTransaction: adapter.signTransaction.bind(adapter),
+      signAllTransactions: adapter.signAllTransactions.bind(adapter),
+      payer: adapter as any,
+    };
   }
 
   // Tool methods
