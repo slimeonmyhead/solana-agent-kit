@@ -94,8 +94,9 @@ export async function sendTx(
     recentBlockhash: ixComputeBudget.blockhash,
     instructions: allInstructions,
   }).compileToV0Message();
-  const transaction = new VersionedTransaction(messageV0);
-  transaction.sign([agent.wallet, ...(otherKeypairs ?? [])] as Signer[]);
+  const transaction = await agent.wallet.signTransaction(
+    new VersionedTransaction(messageV0),
+  );
 
   const timeoutMs = 90000;
   const startTime = Date.now();

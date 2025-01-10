@@ -6,6 +6,7 @@ import {
   createTransferInstruction,
   getMint,
 } from "@solana/spl-token";
+import { sendTx } from "../utils/send_tx";
 
 /**
  * Transfer SOL or SPL tokens to a recipient
@@ -34,7 +35,7 @@ export async function transfer(
         }),
       );
 
-      tx = await agent.connection.sendTransaction(transaction, [agent.wallet]);
+      tx = await sendTx(agent, transaction.instructions);
     } else {
       // Transfer SPL token
       const fromAta = await getAssociatedTokenAddress(
@@ -56,7 +57,7 @@ export async function transfer(
         ),
       );
 
-      tx = await agent.connection.sendTransaction(transaction, [agent.wallet]);
+      tx = await sendTx(agent, transaction.instructions);
     }
 
     return tx;
