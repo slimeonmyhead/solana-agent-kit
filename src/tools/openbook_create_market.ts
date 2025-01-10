@@ -14,41 +14,45 @@ export async function openbookCreateMarket(
   lotSize: number = 1,
   tickSize: number = 0.01,
 ): Promise<string[]> {
-  throw new Error(`Unimplemented`);
-  // const raydium = await Raydium.load({
-  //   owner: agent.wallet,
-  //   connection: agent.connection,
-  // });
+  const raydium = await Raydium.load({
+    owner: agent.wallet_address,
+    connection: agent.connection,
+  });
 
-  // const baseMintInfo = await agent.connection.getAccountInfo(baseMint);
-  // const quoteMintInfo = await agent.connection.getAccountInfo(quoteMint);
+  const baseMintInfo = await agent.connection.getAccountInfo(baseMint);
+  const quoteMintInfo = await agent.connection.getAccountInfo(quoteMint);
 
-  // if (
-  //   baseMintInfo?.owner.toString() !== TOKEN_PROGRAM_ID.toBase58() ||
-  //   quoteMintInfo?.owner.toString() !== TOKEN_PROGRAM_ID.toBase58()
-  // ) {
-  //   throw new Error(
-  //     "openbook market only support TOKEN_PROGRAM_ID mints, if you want to create pool with token-2022, please create raydium cpmm pool instead",
-  //   );
-  // }
+  if (
+    baseMintInfo?.owner.toString() !== TOKEN_PROGRAM_ID.toBase58() ||
+    quoteMintInfo?.owner.toString() !== TOKEN_PROGRAM_ID.toBase58()
+  ) {
+    throw new Error(
+      "openbook market only support TOKEN_PROGRAM_ID mints, if you want to create pool with token-2022, please create raydium cpmm pool instead",
+    );
+  }
 
-  // const { execute } = await raydium.marketV2.create({
-  //   baseInfo: {
-  //     mint: baseMint,
-  //     decimals: MintLayout.decode(baseMintInfo.data).decimals,
-  //   },
-  //   quoteInfo: {
-  //     mint: quoteMint,
-  //     decimals: MintLayout.decode(quoteMintInfo.data).decimals,
-  //   },
-  //   lotSize,
-  //   tickSize,
-  //   dexProgramId: OPEN_BOOK_PROGRAM,
+  const { transactions } = await raydium.marketV2.create({
+    baseInfo: {
+      mint: baseMint,
+      decimals: MintLayout.decode(baseMintInfo.data).decimals,
+    },
+    quoteInfo: {
+      mint: quoteMint,
+      decimals: MintLayout.decode(quoteMintInfo.data).decimals,
+    },
+    lotSize,
+    tickSize,
+    dexProgramId: OPEN_BOOK_PROGRAM,
 
-  //   txVersion: TxVersion.V0,
-  // });
+    txVersion: TxVersion.V0,
+  });
 
-  // const { txIds } = await execute({ sequentially: true });
+  const txIds = await Promise.all(
+    transactions.map(async (tx) => {
+      const transaction = await agent.wallet.signTransaction(tx);
+      return await agent.connection.sendRawTransaction(transaction.serialize());
+    }),
+  );
 
-  // return txIds;
+  return txIds;
 }

@@ -42,8 +42,8 @@ export async function stakeWithSolayer(
     txn.message.recentBlockhash = blockhash;
 
     // Sign and send transaction
-    txn.sign([agent.wallet]);
-    const signature = await agent.connection.sendTransaction(txn, {
+    const signedTx = await agent.wallet.signTransaction(txn);
+    const signature = await agent.connection.sendTransaction(signedTx, {
       preflightCommitment: "confirmed",
       maxRetries: 3,
     });
