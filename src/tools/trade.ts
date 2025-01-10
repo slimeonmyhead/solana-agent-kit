@@ -1,4 +1,4 @@
-import { Transaction, PublicKey, ComputeBudgetProgram } from "@solana/web3.js";
+import { VersionedTransaction, PublicKey } from "@solana/web3.js";
 import { SolanaAgentKit } from "../index";
 import {
   TOKENS,
@@ -46,7 +46,6 @@ export async function trade(
           `&slippageBps=${slippageBps}` +
           `&onlyDirectRoutes=true` +
           `&maxAccounts=64` +
-          `&asLegacyTransaction=true` +
           `${agent.config.JUPITER_FEE_BPS ? `&platformFeeBps=${agent.config.JUPITER_FEE_BPS}` : ""}`,
       )
     ).json();
@@ -74,24 +73,19 @@ export async function trade(
           quoteResponse,
           userPublicKey: agent.wallet_address.toString(),
           wrapAndUnwrapSol: true,
-          dynamicComputeUnitLimit: false,
+          dynamicComputeUnitLimit: true,
           prioritizationFeeLamports: "auto",
           feeAccount: feeAccount ? feeAccount.toString() : null,
-          asLegacyTransaction: true,
+          asLegacyTransaction: false,
         }),
       })
     ).json();
     // Deserialize transaction
     const swapTransactionBuf = Buffer.from(swapTransaction, "base64");
+    const transaction = VersionedTransaction.deserialize(swapTransactionBuf);
 
-    const transaction = Transaction.from(swapTransactionBuf);
-    const filteredInstructions = transaction.instructions.filter(
-      (instruction) => {
-        const programId = instruction.programId;
-        return !programId.equals(ComputeBudgetProgram.programId);
-      },
-    );
-    const signature = await sendTx(agent, filteredInstructions);
+    const signedTx = await agent.wallet.signTransaction(transaction);
+    const signature = await agent.connection.sendTransaction(signedTx);
 
     return signature;
   } catch (error: any) {

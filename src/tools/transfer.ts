@@ -4,6 +4,8 @@ import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import {
   getAssociatedTokenAddress,
   createTransferInstruction,
+  createAssociatedTokenAccountInstruction,
+  getAccount,
   getMint,
 } from "@solana/spl-token";
 import { sendTx } from "../utils/send_tx";
@@ -37,18 +39,30 @@ export async function transfer(
 
       tx = await sendTx(agent, transaction.instructions);
     } else {
+      const transaction = new Transaction();
       // Transfer SPL token
       const fromAta = await getAssociatedTokenAddress(
         mint,
         agent.wallet_address,
       );
       const toAta = await getAssociatedTokenAddress(mint, to);
+      const toAtaAcc = await getAccount(agent.connection, toAta);
+      if (!toAtaAcc) {
+        transaction.add(
+          createAssociatedTokenAccountInstruction(
+            agent.wallet_address,
+            toAta,
+            to,
+            mint,
+          ),
+        );
+      }
 
       // Get mint info to determine decimals
       const mintInfo = await getMint(agent.connection, mint);
       const adjustedAmount = amount * Math.pow(10, mintInfo.decimals);
 
-      const transaction = new Transaction().add(
+      transaction.add(
         createTransferInstruction(
           fromAta,
           toAta,
