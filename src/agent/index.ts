@@ -101,7 +101,7 @@ import { WalletAdapter } from "../types";
  *
  * @class SolanaAgentKit
  * @property {Connection} connection - Solana RPC connection
- * @property {BaseWallet} wallet - Wallet for signing transactions
+ * @property {WalletAdapter} wallet - Wallet for signing transactions
  * @property {PublicKey} wallet_address - Public key of the wallet
  * @property {Config} config - Configuration object
  */
@@ -120,18 +120,7 @@ export class SolanaAgentKit {
    * });
    */
   constructor(
-    private_key: string,
-    rpc_url: string,
-    openai_api_key: string | null,
-  );
-  constructor(private_key: string, rpc_url: string, config: Config);
-  constructor(
-    wallet: string,
-    rpc_url: string,
-    configOrKey: Config | string | null,
-  );
-  constructor(
-    wallet: string | WalletAdapter,
+    wallet: WalletAdapter,
     rpc_url: string,
     configOrKey: Config | string | null,
   ) {
@@ -139,11 +128,7 @@ export class SolanaAgentKit {
       rpc_url || "https://api.mainnet-beta.solana.com",
     );
 
-    if ((wallet as WalletAdapter) !== undefined) {
-      this.wallet = wallet as WalletAdapter;
-    } else {
-      this.wallet = new BaseWallet(wallet as string);
-    }
+    this.wallet = wallet;
     this.wallet_address = this.wallet.publicKey;
 
     if (typeof configOrKey === "string" || configOrKey === null) {
