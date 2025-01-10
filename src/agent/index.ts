@@ -93,6 +93,7 @@ import { approve_proposal } from "../tools/squads_multisig/approve_proposal";
 import { execute_transaction } from "../tools/squads_multisig/execute_proposal";
 import { reject_proposal } from "../tools/squads_multisig/reject_proposal";
 import { BaseWallet } from "../wallet/EmbedWallet";
+import { WalletAdapter } from "../types";
 
 /**
  * Main class for interacting with Solana blockchain
@@ -106,7 +107,7 @@ import { BaseWallet } from "../wallet/EmbedWallet";
  */
 export class SolanaAgentKit {
   public connection: Connection;
-  public wallet: BaseWallet;
+  public wallet: WalletAdapter;
   public wallet_address: PublicKey;
   public config: Config;
 
@@ -125,7 +126,12 @@ export class SolanaAgentKit {
   );
   constructor(private_key: string, rpc_url: string, config: Config);
   constructor(
-    private_key: string,
+    wallet: string,
+    rpc_url: string,
+    configOrKey: Config | string | null,
+  );
+  constructor(
+    wallet: string | WalletAdapter,
     rpc_url: string,
     configOrKey: Config | string | null,
   ) {
@@ -133,7 +139,11 @@ export class SolanaAgentKit {
       rpc_url || "https://api.mainnet-beta.solana.com",
     );
 
-    this.wallet = new BaseWallet(private_key);
+    if ((wallet as WalletAdapter) !== undefined) {
+      this.wallet = wallet as WalletAdapter;
+    } else {
+      this.wallet = new BaseWallet(wallet as string);
+    }
     this.wallet_address = this.wallet.publicKey;
 
     if (typeof configOrKey === "string" || configOrKey === null) {

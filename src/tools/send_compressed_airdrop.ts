@@ -126,133 +126,134 @@ async function processAll(
   priorityFeeInLamports: number,
   shouldLog: boolean,
 ): Promise<string[]> {
-  const mintAddress = mint;
-  const payer = agent.wallet;
+  throw new Error(`Unimplemented`);
+  // const mintAddress = mint;
+  // const payer = agent.wallet;
 
-  const sourceTokenAccount = await getOrCreateAssociatedTokenAccount(
-    agent.connection,
-    agent.wallet,
-    mintAddress,
-    agent.wallet.publicKey,
-  );
+  // const sourceTokenAccount = await getOrCreateAssociatedTokenAccount(
+  //   agent.connection,
+  //   agent.wallet,
+  //   mintAddress,
+  //   agent.wallet.publicKey,
+  // );
 
-  const maxRecipientsPerInstruction = 5;
-  const maxIxs = 3; // empirically determined (as of 12/15/2024)
-  const lookupTableAddress = new PublicKey(
-    "9NYFyEqPkyXUhkerbGHXUXkvb4qpzeEdHuGpgbgpH1NJ",
-  );
+  // const maxRecipientsPerInstruction = 5;
+  // const maxIxs = 3; // empirically determined (as of 12/15/2024)
+  // const lookupTableAddress = new PublicKey(
+  //   "9NYFyEqPkyXUhkerbGHXUXkvb4qpzeEdHuGpgbgpH1NJ",
+  // );
 
-  const lookupTableAccount = (
-    await agent.connection.getAddressLookupTable(lookupTableAddress)
-  ).value!;
+  // const lookupTableAccount = (
+  //   await agent.connection.getAddressLookupTable(lookupTableAddress)
+  // ).value!;
 
-  const batches: PublicKey[][] = [];
-  for (
-    let i = 0;
-    i < recipients.length;
-    i += maxRecipientsPerInstruction * maxIxs
-  ) {
-    batches.push(recipients.slice(i, i + maxRecipientsPerInstruction * maxIxs));
-  }
+  // const batches: PublicKey[][] = [];
+  // for (
+  //   let i = 0;
+  //   i < recipients.length;
+  //   i += maxRecipientsPerInstruction * maxIxs
+  // ) {
+  //   batches.push(recipients.slice(i, i + maxRecipientsPerInstruction * maxIxs));
+  // }
 
-  const instructionSets = await Promise.all(
-    batches.map(async (recipientBatch) => {
-      const instructions: TransactionInstruction[] = [
-        ComputeBudgetProgram.setComputeUnitLimit({ units: 500_000 }),
-        ComputeBudgetProgram.setComputeUnitPrice({
-          microLamports: calculateComputeUnitPrice(
-            priorityFeeInLamports,
-            500_000,
-          ),
-        }),
-      ];
+  // const instructionSets = await Promise.all(
+  //   batches.map(async (recipientBatch) => {
+  //     const instructions: TransactionInstruction[] = [
+  //       ComputeBudgetProgram.setComputeUnitLimit({ units: 500_000 }),
+  //       ComputeBudgetProgram.setComputeUnitPrice({
+  //         microLamports: calculateComputeUnitPrice(
+  //           priorityFeeInLamports,
+  //           500_000,
+  //         ),
+  //       }),
+  //     ];
 
-      const compressIxPromises = [];
-      for (
-        let i = 0;
-        i < recipientBatch.length;
-        i += maxRecipientsPerInstruction
-      ) {
-        const batch = recipientBatch.slice(i, i + maxRecipientsPerInstruction);
-        compressIxPromises.push(
-          CompressedTokenProgram.compress({
-            payer: payer.publicKey,
-            owner: payer.publicKey,
-            source: sourceTokenAccount.address,
-            toAddress: batch,
-            amount: batch.map(() => amount),
-            mint: mintAddress,
-          }),
-        );
-      }
+  //     const compressIxPromises = [];
+  //     for (
+  //       let i = 0;
+  //       i < recipientBatch.length;
+  //       i += maxRecipientsPerInstruction
+  //     ) {
+  //       const batch = recipientBatch.slice(i, i + maxRecipientsPerInstruction);
+  //       compressIxPromises.push(
+  //         CompressedTokenProgram.compress({
+  //           payer: payer.publicKey,
+  //           owner: payer.publicKey,
+  //           source: sourceTokenAccount.address,
+  //           toAddress: batch,
+  //           amount: batch.map(() => amount),
+  //           mint: mintAddress,
+  //         }),
+  //       );
+  //     }
 
-      const compressIxs = await Promise.all(compressIxPromises);
-      return [...instructions, ...compressIxs];
-    }),
-  );
+  //     const compressIxs = await Promise.all(compressIxPromises);
+  //     return [...instructions, ...compressIxs];
+  //   }),
+  // );
 
-  const url = agent.connection.rpcEndpoint;
-  const rpc = createRpc(url, url, url);
+  // const url = agent.connection.rpcEndpoint;
+  // const rpc = createRpc(url, url, url);
 
-  const results = [];
-  let confirmedCount = 0;
-  const totalBatches = instructionSets.length;
+  // const results = [];
+  // let confirmedCount = 0;
+  // const totalBatches = instructionSets.length;
 
-  const renderProgressBar = (current: number, total: number) => {
-    const percentage = Math.floor((current / total) * 100);
-    const filled = Math.floor((percentage / 100) * 20);
-    const empty = 20 - filled;
-    const bar = "█".repeat(filled) + "░".repeat(empty);
-    return `Airdropped to ${Math.min(current * 15, recipients.length)}/${
-      recipients.length
-    } recipients [${bar}] ${percentage}%`;
-  };
+  // const renderProgressBar = (current: number, total: number) => {
+  //   const percentage = Math.floor((current / total) * 100);
+  //   const filled = Math.floor((percentage / 100) * 20);
+  //   const empty = 20 - filled;
+  //   const bar = "█".repeat(filled) + "░".repeat(empty);
+  //   return `Airdropped to ${Math.min(current * 15, recipients.length)}/${
+  //     recipients.length
+  //   } recipients [${bar}] ${percentage}%`;
+  // };
 
-  const log = (message: string) => {
-    if (shouldLog && typeof process !== "undefined" && process.stdout) {
-      process.stdout.write(message);
-    }
-  };
+  // const log = (message: string) => {
+  //   if (shouldLog && typeof process !== "undefined" && process.stdout) {
+  //     process.stdout.write(message);
+  //   }
+  // };
 
-  for (let i = 0; i < instructionSets.length; i += MAX_CONCURRENT_TXS) {
-    const batchPromises = instructionSets
-      .slice(i, i + MAX_CONCURRENT_TXS)
-      .map((instructions, idx) =>
-        sendTransactionWithRetry(
-          rpc,
-          instructions,
-          payer,
-          lookupTableAccount,
-          i + idx,
-        ).then((signature) => {
-          confirmedCount++;
-          log("\r" + renderProgressBar(confirmedCount, totalBatches));
-          return signature;
-        }),
-      );
+  // for (let i = 0; i < instructionSets.length; i += MAX_CONCURRENT_TXS) {
+  //   const batchPromises = instructionSets
+  //     .slice(i, i + MAX_CONCURRENT_TXS)
+  //     .map((instructions, idx) =>
+  //       sendTransactionWithRetry(
+  //         rpc,
+  //         instructions,
+  //         payer,
+  //         lookupTableAccount,
+  //         i + idx,
+  //       ).then((signature) => {
+  //         confirmedCount++;
+  //         log("\r" + renderProgressBar(confirmedCount, totalBatches));
+  //         return signature;
+  //       }),
+  //     );
 
-    const batchResults = await Promise.allSettled(batchPromises);
-    results.push(...batchResults);
-  }
+  //   const batchResults = await Promise.allSettled(batchPromises);
+  //   results.push(...batchResults);
+  // }
 
-  log("\n");
+  // log("\n");
 
-  const failures = results
-    .filter((r) => r.status === "rejected")
-    .map((r, idx) => ({
-      index: idx,
-      error: (r as PromiseRejectedResult).reason,
-    }));
+  // const failures = results
+  //   .filter((r) => r.status === "rejected")
+  //   .map((r, idx) => ({
+  //     index: idx,
+  //     error: (r as PromiseRejectedResult).reason,
+  //   }));
 
-  if (failures.length > 0) {
-    throw new Error(
-      `Failed to process ${failures.length} batches: ${failures
-        .map((f) => f.error)
-        .join(", ")}`,
-    );
-  }
+  // if (failures.length > 0) {
+  //   throw new Error(
+  //     `Failed to process ${failures.length} batches: ${failures
+  //       .map((f) => f.error)
+  //       .join(", ")}`,
+  //   );
+  // }
 
-  return results.map((r) => (r as PromiseFulfilledResult<string>).value);
+  // return results.map((r) => (r as PromiseFulfilledResult<string>).value);
 }
 
 async function sendTransactionWithRetry(

@@ -32,44 +32,45 @@ export async function deploy_token(
   decimals: number = 9,
   initialSupply?: number,
 ): Promise<{ mint: PublicKey }> {
-  try {
-    // Create UMI instance from agent
-    const umi = createUmi(agent.connection.rpcEndpoint).use(mplToolbox());
-    umi.use(keypairIdentity(fromWeb3JsKeypair(agent.wallet)));
+  throw new Error(`Unimplemented`);
+  // try {
+  //   // Create UMI instance from agent
+  //   const umi = createUmi(agent.connection.rpcEndpoint).use(mplToolbox());
+  //   umi.use(keypairIdentity(fromWeb3JsKeypair(agent.wallet)));
 
-    // Create new token mint
-    const mint = generateSigner(umi);
+  //   // Create new token mint
+  //   const mint = generateSigner(umi);
 
-    let builder = createFungible(umi, {
-      name,
-      uri,
-      symbol,
-      sellerFeeBasisPoints: {
-        basisPoints: 0n,
-        identifier: "%",
-        decimals: 2,
-      },
-      decimals,
-      mint,
-    });
+  //   let builder = createFungible(umi, {
+  //     name,
+  //     uri,
+  //     symbol,
+  //     sellerFeeBasisPoints: {
+  //       basisPoints: 0n,
+  //       identifier: "%",
+  //       decimals: 2,
+  //     },
+  //     decimals,
+  //     mint,
+  //   });
 
-    if (initialSupply) {
-      builder = builder.add(
-        mintV1(umi, {
-          mint: mint.publicKey,
-          tokenStandard: TokenStandard.Fungible,
-          tokenOwner: fromWeb3JsPublicKey(agent.wallet_address),
-          amount: initialSupply * Math.pow(10, decimals),
-        }),
-      );
-    }
+  //   if (initialSupply) {
+  //     builder = builder.add(
+  //       mintV1(umi, {
+  //         mint: mint.publicKey,
+  //         tokenStandard: TokenStandard.Fungible,
+  //         tokenOwner: fromWeb3JsPublicKey(agent.wallet_address),
+  //         amount: initialSupply * Math.pow(10, decimals),
+  //       }),
+  //     );
+  //   }
 
-    builder.sendAndConfirm(umi, { confirm: { commitment: "finalized" } });
+  //   builder.sendAndConfirm(umi, { confirm: { commitment: "finalized" } });
 
-    return {
-      mint: toWeb3JsPublicKey(mint.publicKey),
-    };
-  } catch (error: any) {
-    throw new Error(`Token deployment failed: ${error.message}`);
-  }
+  //   return {
+  //     mint: toWeb3JsPublicKey(mint.publicKey),
+  //   };
+  // } catch (error: any) {
+  //   throw new Error(`Token deployment failed: ${error.message}`);
+  // }
 }

@@ -62,37 +62,38 @@ export async function limitOrder(
   side: string,
   price: number,
 ): Promise<string> {
-  try {
-    const mfxClient = await ManifestClient.getClientForMarket(
-      agent.connection,
-      marketId,
-      agent.wallet,
-    );
+  throw new Error(`Unimplemented`);
+  // try {
+  //   const mfxClient = await ManifestClient.getClientForMarket(
+  //     agent.connection,
+  //     marketId,
+  //     agent.wallet,
+  //   );
 
-    const orderParams: WrapperPlaceOrderParamsExternal = {
-      numBaseTokens: quantity,
-      tokenPrice: price,
-      isBid: side === "Buy",
-      lastValidSlot: 0,
-      orderType: OrderType.Limit,
-      clientOrderId: Number(Math.random() * 1000),
-    };
+  //   const orderParams: WrapperPlaceOrderParamsExternal = {
+  //     numBaseTokens: quantity,
+  //     tokenPrice: price,
+  //     isBid: side === "Buy",
+  //     lastValidSlot: 0,
+  //     orderType: OrderType.Limit,
+  //     clientOrderId: Number(Math.random() * 1000),
+  //   };
 
-    const depositPlaceOrderIx: TransactionInstruction[] =
-      await mfxClient.placeOrderWithRequiredDepositIx(
-        agent.wallet.publicKey,
-        orderParams,
-      );
-    const signature = await sendAndConfirmTransaction(
-      agent.connection,
-      new Transaction().add(...depositPlaceOrderIx),
-      [agent.wallet],
-    );
+  //   const depositPlaceOrderIx: TransactionInstruction[] =
+  //     await mfxClient.placeOrderWithRequiredDepositIx(
+  //       agent.wallet.publicKey,
+  //       orderParams,
+  //     );
+  //   const signature = await sendAndConfirmTransaction(
+  //     agent.connection,
+  //     new Transaction().add(...depositPlaceOrderIx),
+  //     [agent.wallet],
+  //   );
 
-    return signature;
-  } catch (error: any) {
-    throw new Error(`Limit Order failed: ${error.message}`);
-  }
+  //   return signature;
+  // } catch (error: any) {
+  //   throw new Error(`Limit Order failed: ${error.message}`);
+  // }
 }
 
 /**
@@ -105,24 +106,25 @@ export async function cancelAllOrders(
   agent: SolanaAgentKit,
   marketId: PublicKey,
 ): Promise<string> {
-  try {
-    const mfxClient = await ManifestClient.getClientForMarket(
-      agent.connection,
-      marketId,
-      agent.wallet,
-    );
+  throw new Error(`Unimplemented`);
+  // try {
+  //   const mfxClient = await ManifestClient.getClientForMarket(
+  //     agent.connection,
+  //     marketId,
+  //     agent.wallet,
+  //   );
 
-    const cancelAllOrdersIx = await mfxClient.cancelAllIx();
-    const signature = await sendAndConfirmTransaction(
-      agent.connection,
-      new Transaction().add(cancelAllOrdersIx),
-      [agent.wallet],
-    );
+  //   const cancelAllOrdersIx = await mfxClient.cancelAllIx();
+  //   const signature = await sendAndConfirmTransaction(
+  //     agent.connection,
+  //     new Transaction().add(cancelAllOrdersIx),
+  //     [agent.wallet],
+  //   );
 
-    return signature;
-  } catch (error: any) {
-    throw new Error(`Cancel all orders failed: ${error.message}`);
-  }
+  //   return signature;
+  // } catch (error: any) {
+  //   throw new Error(`Cancel all orders failed: ${error.message}`);
+  // }
 }
 
 /**
@@ -135,24 +137,25 @@ export async function withdrawAll(
   agent: SolanaAgentKit,
   marketId: PublicKey,
 ): Promise<string> {
-  try {
-    const mfxClient = await ManifestClient.getClientForMarket(
-      agent.connection,
-      marketId,
-      agent.wallet,
-    );
+  throw new Error(`Unimplemented`);
+  // try {
+  //   const mfxClient = await ManifestClient.getClientForMarket(
+  //     agent.connection,
+  //     marketId,
+  //     agent.wallet,
+  //   );
 
-    const withdrawAllIx = await mfxClient.withdrawAllIx();
-    const signature = await sendAndConfirmTransaction(
-      agent.connection,
-      new Transaction().add(...withdrawAllIx),
-      [agent.wallet],
-    );
+  //   const withdrawAllIx = await mfxClient.withdrawAllIx();
+  //   const signature = await sendAndConfirmTransaction(
+  //     agent.connection,
+  //     new Transaction().add(...withdrawAllIx),
+  //     [agent.wallet],
+  //   );
 
-    return signature;
-  } catch (error: any) {
-    throw new Error(`Withdraw all failed: ${error.message}`);
-  }
+  //   return signature;
+  // } catch (error: any) {
+  //   throw new Error(`Withdraw all failed: ${error.message}`);
+  // }
 }
 
 /**
@@ -256,40 +259,41 @@ export async function batchOrder(
   marketId: PublicKey,
   orders: OrderParams[],
 ): Promise<string> {
-  try {
-    validateNoCrossedOrders(orders);
+  throw new Error(`Unimplemented`);
+  // try {
+  //   validateNoCrossedOrders(orders);
 
-    const mfxClient = await ManifestClient.getClientForMarket(
-      agent.connection,
-      marketId,
-      agent.wallet,
-    );
+  //   const mfxClient = await ManifestClient.getClientForMarket(
+  //     agent.connection,
+  //     marketId,
+  //     agent.wallet,
+  //   );
 
-    const placeParams: WrapperPlaceOrderParamsExternal[] = orders.map(
-      (order) => ({
-        numBaseTokens: order.quantity,
-        tokenPrice: order.price,
-        isBid: order.side === "Buy",
-        lastValidSlot: 0,
-        orderType: OrderType.Limit,
-        clientOrderId: Number(Math.random() * 10000),
-      }),
-    );
+  //   const placeParams: WrapperPlaceOrderParamsExternal[] = orders.map(
+  //     (order) => ({
+  //       numBaseTokens: order.quantity,
+  //       tokenPrice: order.price,
+  //       isBid: order.side === "Buy",
+  //       lastValidSlot: 0,
+  //       orderType: OrderType.Limit,
+  //       clientOrderId: Number(Math.random() * 10000),
+  //     }),
+  //   );
 
-    const batchOrderIx: TransactionInstruction = await mfxClient.batchUpdateIx(
-      placeParams,
-      [],
-      true,
-    );
+  //   const batchOrderIx: TransactionInstruction = await mfxClient.batchUpdateIx(
+  //     placeParams,
+  //     [],
+  //     true,
+  //   );
 
-    const signature = await sendAndConfirmTransaction(
-      agent.connection,
-      new Transaction().add(batchOrderIx),
-      [agent.wallet],
-    );
+  //   const signature = await sendAndConfirmTransaction(
+  //     agent.connection,
+  //     new Transaction().add(batchOrderIx),
+  //     [agent.wallet],
+  //   );
 
-    return signature;
-  } catch (error: any) {
-    throw new Error(`Batch Order failed: ${error.message}`);
-  }
+  //   return signature;
+  // } catch (error: any) {
+  //   throw new Error(`Batch Order failed: ${error.message}`);
+  // }
 }

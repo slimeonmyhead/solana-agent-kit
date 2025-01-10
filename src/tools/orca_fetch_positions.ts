@@ -51,71 +51,72 @@ type PositionDataMap = {
 export async function orcaFetchPositions(
   agent: SolanaAgentKit,
 ): Promise<string> {
-  try {
-    const wallet = new Wallet(agent.wallet);
-    const ctx = WhirlpoolContext.from(
-      agent.connection,
-      wallet,
-      ORCA_WHIRLPOOL_PROGRAM_ID,
-    );
-    const client = buildWhirlpoolClient(ctx);
+  throw new Error(`Unimplemented`);
+  // try {
+  //   const wallet = new Wallet(agent.wallet);
+  //   const ctx = WhirlpoolContext.from(
+  //     agent.connection,
+  //     wallet,
+  //     ORCA_WHIRLPOOL_PROGRAM_ID,
+  //   );
+  //   const client = buildWhirlpoolClient(ctx);
 
-    const positions = await getAllPositionAccountsByOwner({
-      ctx,
-      owner: agent.wallet.publicKey,
-    });
-    const positionDatas = [
-      ...positions.positions.entries(),
-      ...positions.positionsWithTokenExtensions.entries(),
-    ];
-    const result: PositionDataMap = {};
-    for (const [, positionData] of positionDatas) {
-      const positionMintAddress = positionData.positionMint;
-      const whirlpoolAddress = positionData.whirlpool;
-      const whirlpool = await client.getPool(whirlpoolAddress);
-      const whirlpoolData = whirlpool.getData();
-      const sqrtPrice = whirlpoolData.sqrtPrice;
-      const currentTick = whirlpoolData.tickCurrentIndex;
-      const mintA = whirlpool.getTokenAInfo();
-      const mintB = whirlpool.getTokenBInfo();
-      const currentPrice = PriceMath.sqrtPriceX64ToPrice(
-        sqrtPrice,
-        mintA.decimals,
-        mintB.decimals,
-      );
-      const lowerTick = positionData.tickLowerIndex;
-      const upperTick = positionData.tickUpperIndex;
-      const lowerPrice = PriceMath.tickIndexToPrice(
-        lowerTick,
-        mintA.decimals,
-        mintB.decimals,
-      );
-      const upperPrice = PriceMath.tickIndexToPrice(
-        upperTick,
-        mintA.decimals,
-        mintB.decimals,
-      );
-      const centerPosition = lowerPrice.add(upperPrice).div(2);
+  //   const positions = await getAllPositionAccountsByOwner({
+  //     ctx,
+  //     owner: agent.wallet.publicKey,
+  //   });
+  //   const positionDatas = [
+  //     ...positions.positions.entries(),
+  //     ...positions.positionsWithTokenExtensions.entries(),
+  //   ];
+  //   const result: PositionDataMap = {};
+  //   for (const [, positionData] of positionDatas) {
+  //     const positionMintAddress = positionData.positionMint;
+  //     const whirlpoolAddress = positionData.whirlpool;
+  //     const whirlpool = await client.getPool(whirlpoolAddress);
+  //     const whirlpoolData = whirlpool.getData();
+  //     const sqrtPrice = whirlpoolData.sqrtPrice;
+  //     const currentTick = whirlpoolData.tickCurrentIndex;
+  //     const mintA = whirlpool.getTokenAInfo();
+  //     const mintB = whirlpool.getTokenBInfo();
+  //     const currentPrice = PriceMath.sqrtPriceX64ToPrice(
+  //       sqrtPrice,
+  //       mintA.decimals,
+  //       mintB.decimals,
+  //     );
+  //     const lowerTick = positionData.tickLowerIndex;
+  //     const upperTick = positionData.tickUpperIndex;
+  //     const lowerPrice = PriceMath.tickIndexToPrice(
+  //       lowerTick,
+  //       mintA.decimals,
+  //       mintB.decimals,
+  //     );
+  //     const upperPrice = PriceMath.tickIndexToPrice(
+  //       upperTick,
+  //       mintA.decimals,
+  //       mintB.decimals,
+  //     );
+  //     const centerPosition = lowerPrice.add(upperPrice).div(2);
 
-      const positionInRange =
-        currentTick > lowerTick && currentTick < upperTick ? true : false;
-      const distanceFromCenterBps = Math.ceil(
-        currentPrice
-          .sub(centerPosition)
-          .abs()
-          .div(centerPosition)
-          .mul(10000)
-          .toNumber(),
-      );
+  //     const positionInRange =
+  //       currentTick > lowerTick && currentTick < upperTick ? true : false;
+  //     const distanceFromCenterBps = Math.ceil(
+  //       currentPrice
+  //         .sub(centerPosition)
+  //         .abs()
+  //         .div(centerPosition)
+  //         .mul(10000)
+  //         .toNumber(),
+  //     );
 
-      result[positionMintAddress.toString()] = {
-        whirlpoolAddress: whirlpoolAddress.toString(),
-        positionInRange,
-        distanceFromCenterBps,
-      };
-    }
-    return JSON.stringify(result);
-  } catch (error) {
-    throw new Error(`${error}`);
-  }
+  //     result[positionMintAddress.toString()] = {
+  //       whirlpoolAddress: whirlpoolAddress.toString(),
+  //       positionInRange,
+  //       distanceFromCenterBps,
+  //     };
+  //   }
+  //   return JSON.stringify(result);
+  // } catch (error) {
+  //   throw new Error(`${error}`);
+  // }
 }

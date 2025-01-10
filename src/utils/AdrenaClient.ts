@@ -36,40 +36,41 @@ export default class AdrenaClient {
   );
 
   public static async load(agent: SolanaAgentKit): Promise<AdrenaClient> {
-    const program = new Program<Adrena>(
-      ADRENA_IDL,
-      AdrenaClient.programId,
-      new AnchorProvider(agent.connection, new NodeWallet(agent.wallet), {
-        commitment: "processed",
-        skipPreflight: true,
-      }),
-    );
+    throw new Error(`Unimplemented`);
+    // const program = new Program<Adrena>(
+    //   ADRENA_IDL,
+    //   AdrenaClient.programId,
+    //   new AnchorProvider(agent.connection, new NodeWallet(agent.wallet), {
+    //     commitment: "processed",
+    //     skipPreflight: true,
+    //   }),
+    // );
 
-    const [cortex, mainPool] = await Promise.all([
-      program.account.cortex.fetch(AdrenaClient.cortex),
-      program.account.pool.fetch(AdrenaClient.mainPool),
-    ]);
+    // const [cortex, mainPool] = await Promise.all([
+    //   program.account.cortex.fetch(AdrenaClient.cortex),
+    //   program.account.pool.fetch(AdrenaClient.mainPool),
+    // ]);
 
-    const custodiesAddresses = mainPool.custodies.filter(
-      (custody) => !custody.equals(PublicKey.default),
-    );
+    // const custodiesAddresses = mainPool.custodies.filter(
+    //   (custody) => !custody.equals(PublicKey.default),
+    // );
 
-    const custodies =
-      await program.account.custody.fetchMultiple(custodiesAddresses);
+    // const custodies =
+    //   await program.account.custody.fetchMultiple(custodiesAddresses);
 
-    if (!custodies.length || custodies.some((c) => c === null)) {
-      throw new Error("Custodies not found");
-    }
+    // if (!custodies.length || custodies.some((c) => c === null)) {
+    //   throw new Error("Custodies not found");
+    // }
 
-    return new AdrenaClient(
-      program,
-      mainPool,
-      cortex,
-      (custodies as Custody[]).map((c, i) => ({
-        ...c,
-        pubkey: custodiesAddresses[i],
-      })),
-    );
+    // return new AdrenaClient(
+    //   program,
+    //   mainPool,
+    //   cortex,
+    //   (custodies as Custody[]).map((c, i) => ({
+    //     ...c,
+    //     pubkey: custodiesAddresses[i],
+    //   })),
+    // );
   }
 
   public static findCustodyAddress(mint: PublicKey): PublicKey {

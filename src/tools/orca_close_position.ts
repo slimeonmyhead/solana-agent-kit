@@ -47,36 +47,37 @@ export async function orcaClosePosition(
   agent: SolanaAgentKit,
   positionMintAddress: PublicKey,
 ): Promise<string> {
-  try {
-    const wallet = new Wallet(agent.wallet);
-    const ctx = WhirlpoolContext.from(
-      agent.connection,
-      wallet,
-      ORCA_WHIRLPOOL_PROGRAM_ID,
-    );
-    const client = buildWhirlpoolClient(ctx);
+  throw new Error(`Unimplemented`);
+  // try {
+  //   const wallet = new Wallet(agent.wallet);
+  //   const ctx = WhirlpoolContext.from(
+  //     agent.connection,
+  //     wallet,
+  //     ORCA_WHIRLPOOL_PROGRAM_ID,
+  //   );
+  //   const client = buildWhirlpoolClient(ctx);
 
-    const positionAddress = PDAUtil.getPosition(
-      ORCA_WHIRLPOOL_PROGRAM_ID,
-      positionMintAddress,
-    );
-    const position = await client.getPosition(positionAddress.publicKey);
-    const whirlpoolAddress = position.getData().whirlpool;
-    const whirlpool = await client.getPool(whirlpoolAddress);
-    const txBuilder = await whirlpool.closePosition(
-      positionAddress.publicKey,
-      Percentage.fromFraction(1, 100),
-    );
-    const txPayload = await txBuilder[0].build();
-    const txPayloadDecompiled = TransactionMessage.decompile(
-      (txPayload.transaction as VersionedTransaction).message,
-    );
-    const instructions = txPayloadDecompiled.instructions;
-    const signers = txPayload.signers as Keypair[];
+  //   const positionAddress = PDAUtil.getPosition(
+  //     ORCA_WHIRLPOOL_PROGRAM_ID,
+  //     positionMintAddress,
+  //   );
+  //   const position = await client.getPosition(positionAddress.publicKey);
+  //   const whirlpoolAddress = position.getData().whirlpool;
+  //   const whirlpool = await client.getPool(whirlpoolAddress);
+  //   const txBuilder = await whirlpool.closePosition(
+  //     positionAddress.publicKey,
+  //     Percentage.fromFraction(1, 100),
+  //   );
+  //   const txPayload = await txBuilder[0].build();
+  //   const txPayloadDecompiled = TransactionMessage.decompile(
+  //     (txPayload.transaction as VersionedTransaction).message,
+  //   );
+  //   const instructions = txPayloadDecompiled.instructions;
+  //   const signers = txPayload.signers as Keypair[];
 
-    const txId = await sendTx(agent, instructions, signers);
-    return txId;
-  } catch (error) {
-    throw new Error(`${error}`);
-  }
+  //   const txId = await sendTx(agent, instructions, signers);
+  //   return txId;
+  // } catch (error) {
+  //   throw new Error(`${error}`);
+  // }
 }
