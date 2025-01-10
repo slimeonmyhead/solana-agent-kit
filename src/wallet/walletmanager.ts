@@ -1,6 +1,5 @@
-import { PublicKey, Transaction, VersionedTransaction } from "@solana/web3.js";
 import { Wallet } from "@coral-xyz/anchor";
-import { WalletAdapter } from "./EmbedWallet";
+import { WalletAdapter } from "../types";
 
 export class WalletManager {
   private static instance: WalletManager;

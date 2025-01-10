@@ -1,21 +1,6 @@
-import {
-  Keypair,
-  PublicKey,
-  Transaction,
-  VersionedTransaction,
-} from "@solana/web3.js";
+import { Keypair, Transaction, VersionedTransaction } from "@solana/web3.js";
+import { WalletAdapter } from "../types";
 import bs58 from "bs58";
-
-export interface WalletAdapter {
-  publicKey: PublicKey;
-  secretKey: Uint8Array;
-  signTransaction<T extends Transaction | VersionedTransaction>(
-    transaction: T,
-  ): Promise<T>;
-  signAllTransactions<T extends Transaction | VersionedTransaction>(
-    transactions: T[],
-  ): Promise<T[]>;
-}
 
 export class BaseWallet extends Keypair implements WalletAdapter {
   constructor(privateKey: string | Keypair) {
