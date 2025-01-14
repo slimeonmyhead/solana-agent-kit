@@ -1,10 +1,10 @@
-import { ComputeBudgetProgram, PublicKey, Transaction } from "@solana/web3.js";
 import {
   DEFAULT_OPTIONS,
   JUP_API,
   JUP_REFERRAL_ADDRESS,
   TOKENS,
 } from "../../constants";
+import { PublicKey, VersionedTransaction } from "@solana/web3.js";
 
 import { SolanaAgentKit } from "../../index";
 import { getMint } from "@solana/spl-token";
@@ -48,7 +48,6 @@ export async function trade(
           `&slippageBps=${slippageBps}` +
           `&onlyDirectRoutes=true` +
           `&maxAccounts=64` +
-          `&asLegacyTransaction=true` +
           `${agent.config.JUPITER_FEE_BPS ? `&platformFeeBps=${agent.config.JUPITER_FEE_BPS}` : ""}`,
       )
     ).json();
@@ -76,25 +75,29 @@ export async function trade(
           quoteResponse,
           userPublicKey: agent.wallet_address.toString(),
           wrapAndUnwrapSol: true,
-          dynamicComputeUnitLimit: false,
+          dynamicComputeUnitLimit: true,
           prioritizationFeeLamports: "auto",
           feeAccount: feeAccount ? feeAccount.toString() : null,
-          asLegacyTransaction: true,
         }),
       })
     ).json();
     // Deserialize transaction
     const swapTransactionBuf = Buffer.from(swapTransaction, "base64");
 
-    const transaction = Transaction.from(swapTransactionBuf);
-    const filteredInstructions = transaction.instructions.filter(
-      (instruction) => {
-        const programId = instruction.programId;
-        return !programId.equals(ComputeBudgetProgram.programId);
-      },
-    );
-    // Sign and send transaction
-    const signature = await sendTx(agent, filteredInstructions);
+    const transaction = VersionedTransaction.deserialize(swapTransactionBuf);
+    const signedTx = await agent.wallet.signTransaction(transaction);
+    const signature = await agent.connection.sendTransaction(signedTx, {
+      preflightCommitment: "confirmed",
+      maxRetries: 3,
+    });
+
+    // Wait for confirmation using the latest strategy
+    const latestBlockhash = await agent.connection.getLatestBlockhash();
+    await agent.connection.confirmTransaction({
+      signature,
+      blockhash: latestBlockhash.blockhash,
+      lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+    });
 
     return signature;
   } catch (error: any) {
