@@ -47,7 +47,7 @@ export async function trade(
           `&amount=${scaledAmount}` +
           `&slippageBps=${slippageBps}` +
           `&onlyDirectRoutes=true` +
-          `&maxAccounts=64` +
+          `&maxAccounts=40` +
           `${agent.config.JUPITER_FEE_BPS ? `&platformFeeBps=${agent.config.JUPITER_FEE_BPS}` : ""}`,
       )
     ).json();
