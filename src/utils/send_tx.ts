@@ -157,14 +157,13 @@ export async function sendTx(
 
   const timeoutMs = 90000;
   const startTime = Date.now();
+  const signature = await agent.connection.sendTransaction(signedTx, {
+    maxRetries: 3,
+    skipPreflight: false,
+    preflightCommitment: "confirmed",
+  });
   while (Date.now() - startTime < timeoutMs) {
     const transactionStartTime = Date.now();
-
-    const signature = await agent.connection.sendTransaction(signedTx, {
-      maxRetries: 3,
-      skipPreflight: false,
-      preflightCommitment: "confirmed",
-    });
 
     const statuses = await agent.connection.getSignatureStatuses([signature]);
     if (statuses.value[0]) {
