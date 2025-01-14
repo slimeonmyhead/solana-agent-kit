@@ -155,32 +155,17 @@ export async function sendTx(
     signedTx.sign(otherKeypairs);
   }
 
-  const timeoutMs = 90000;
-  const startTime = Date.now();
   const signature = await agent.connection.sendTransaction(signedTx, {
     maxRetries: 3,
     skipPreflight: false,
     preflightCommitment: "confirmed",
   });
-  while (Date.now() - startTime < timeoutMs) {
-    const transactionStartTime = Date.now();
 
-    const statuses = await agent.connection.getSignatureStatuses([signature]);
-    if (statuses.value[0]) {
-      if (!statuses.value[0].err) {
-        return signature;
-      } else {
-        throw new Error(
-          `Transaction failed: ${statuses.value[0].err.toString()}`,
-        );
-      }
-    }
-
-    const elapsedTime = Date.now() - transactionStartTime;
-    const remainingTime = Math.max(0, 1000 - elapsedTime);
-    if (remainingTime > 0) {
-      await new Promise((resolve) => setTimeout(resolve, remainingTime));
-    }
-  }
-  throw new Error("Transaction timeout");
+  const latestBlockhash = await agent.connection.getLatestBlockhash();
+  await agent.connection.confirmTransaction({
+    signature,
+    blockhash: latestBlockhash.blockhash,
+    lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+  });
+  return signature;
 }
