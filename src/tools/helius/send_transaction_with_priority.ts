@@ -1,18 +1,19 @@
-import { SolanaAgentKit, PriorityFeeResponse } from "../../index";
 import {
+  ComputeBudgetProgram,
+  LAMPORTS_PER_SOL,
+  PublicKey,
   SystemProgram,
   Transaction,
   sendAndConfirmTransaction,
-  ComputeBudgetProgram,
-  PublicKey,
-  LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
+import { PriorityFeeResponse, SolanaAgentKit } from "../../index";
 import {
-  getAssociatedTokenAddress,
-  createTransferInstruction,
-  getMint,
   createAssociatedTokenAccountInstruction,
+  createTransferInstruction,
+  getAssociatedTokenAddress,
+  getMint,
 } from "@solana/spl-token";
+
 import bs58 from "bs58";
 
 /**
@@ -47,7 +48,7 @@ export async function sendTransactionWithPriorityFee(
       });
 
       transaction.add(transferIx);
-      transaction.sign(agent.wallet);
+      const signedTx = await agent.wallet.signTransaction(transaction);
 
       const response = await fetch(
         `https://mainnet.helius-rpc.com/?api-key=${agent.config.HELIUS_API_KEY}`,
@@ -60,7 +61,7 @@ export async function sendTransactionWithPriorityFee(
             method: "getPriorityFeeEstimate",
             params: [
               {
-                transaction: bs58.encode(transaction.serialize()),
+                transaction: bs58.encode(signedTx.serialize()),
                 options: { priorityLevel: priorityLevel },
               },
             ],

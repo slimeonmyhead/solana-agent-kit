@@ -1,8 +1,8 @@
 // src/tools/launch_pumpfun_token.ts
-import { VersionedTransaction, Keypair } from "@solana/web3.js";
+import { Keypair, VersionedTransaction } from "@solana/web3.js";
 import {
-  PumpfunLaunchResponse,
   PumpFunTokenOptions,
+  PumpfunLaunchResponse,
   SolanaAgentKit,
 } from "../../index";
 
@@ -114,10 +114,11 @@ async function signAndSendTransaction(
     tx.message.recentBlockhash = blockhash;
 
     // Sign the transaction
-    tx.sign([mintKeypair, kit.wallet]);
+    const signedTx = await kit.wallet.signTransaction(tx);
+    signedTx.sign([mintKeypair]);
 
     // Send and confirm transaction with options
-    const signature = await kit.connection.sendTransaction(tx, {
+    const signature = await kit.connection.sendTransaction(signedTx, {
       skipPreflight: false,
       preflightCommitment: "confirmed",
       maxRetries: 5,

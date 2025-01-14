@@ -1,6 +1,7 @@
-import { VersionedTransaction } from "@solana/web3.js";
-import { PublicKey } from "@solana/web3.js";
 import { GibworkCreateTaskReponse, SolanaAgentKit } from "../../index";
+
+import { PublicKey } from "@solana/web3.js";
+import { VersionedTransaction } from "@solana/web3.js";
 
 /**
  * Create an new task on Gibwork
@@ -57,8 +58,8 @@ export async function create_gibwork_task(
     );
     const tx = VersionedTransaction.deserialize(serializedTransaction);
 
-    tx.sign([agent.wallet]);
-    const signature = await agent.connection.sendTransaction(tx, {
+    const signedTx = await agent.wallet.signTransaction(tx);
+    const signature = await agent.connection.sendTransaction(signedTx, {
       preflightCommitment: "confirmed",
       maxRetries: 3,
     });

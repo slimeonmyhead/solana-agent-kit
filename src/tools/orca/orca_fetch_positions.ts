@@ -1,12 +1,13 @@
-import { SolanaAgentKit } from "../../agent";
-import { Wallet } from "@coral-xyz/anchor";
 import {
   ORCA_WHIRLPOOL_PROGRAM_ID,
+  PriceMath,
   WhirlpoolContext,
   buildWhirlpoolClient,
   getAllPositionAccountsByOwner,
-  PriceMath,
 } from "@orca-so/whirlpools-sdk";
+
+import { SolanaAgentKit } from "../../agent";
+import { Wallet } from "@coral-xyz/anchor";
 
 interface PositionInfo {
   whirlpoolAddress: string;
@@ -52,7 +53,7 @@ export async function orcaFetchPositions(
   agent: SolanaAgentKit,
 ): Promise<string> {
   try {
-    const wallet = new Wallet(agent.wallet);
+    const wallet = agent.getAnchorWallet();
     const ctx = WhirlpoolContext.from(
       agent.connection,
       wallet,

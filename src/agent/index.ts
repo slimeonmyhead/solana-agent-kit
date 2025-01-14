@@ -1,104 +1,106 @@
+import { BN, Wallet } from "@coral-xyz/anchor";
+import {
+  CollectionDeployment,
+  CollectionOptions,
+  Config,
+  FlashCloseTradeParams,
+  FlashTradeParams,
+  GibworkCreateTaskReponse,
+  HeliusWebhookIdResponse,
+  HeliusWebhookResponse,
+  JupiterTokenData,
+  MintCollectionNFTResponse,
+  OrderParams,
+  PumpFunTokenOptions,
+  PumpfunLaunchResponse,
+  TokenCheck,
+  WalletAdapter,
+} from "../types";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
-import { BN } from "@coral-xyz/anchor";
-import bs58 from "bs58";
-import Decimal from "decimal.js";
 import {
   CreateCollectionOptions,
   CreateSingleOptions,
   StoreInitOptions,
 } from "@3land/listings-sdk/dist/types/implementation/implementationTypes";
-import { DEFAULT_OPTIONS } from "../constants";
 import {
+  FEE_TIERS,
+  batchOrder,
+  cancelAllOrders,
+  cancelListing,
+  closeEmptyTokenAccounts,
+  closePerpTradeLong,
+  closePerpTradeShort,
+  createCollection,
+  createSingle,
+  create_HeliusWebhook,
+  create_TipLink,
+  create_gibwork_task,
+  create_squads_multisig,
+  deleteHeliusWebhook,
   deploy_collection,
   deploy_token,
+  fetchPrice,
+  fetchPythPrice,
+  fetchPythPriceFeedID,
+  fetchTokenDetailedReport,
+  fetchTokenReportSummary,
+  flashCloseTrade,
+  flashOpenTrade,
+  getAllDomainsTLDs,
+  getAllRegisteredAllDomains,
+  getAssetsByOwner,
+  getHeliusWebhook,
+  getMainAllDomainsDomain,
+  getOwnedAllDomains,
+  getOwnedDomainsForTLD,
+  getPrimaryDomain,
+  getTPS,
+  getTokenDataByAddress,
+  getTokenDataByTicker,
   get_balance,
   get_balance_other,
-  getTPS,
-  resolveSolDomain,
-  getPrimaryDomain,
   launchPumpFunToken,
   lendAsset,
-  mintCollectionNFT,
-  openbookCreateMarket,
+  limitOrder,
+  listNFTForSale,
   manifestCreateMarket,
+  mintCollectionNFT,
+  multisig_approve_proposal,
+  multisig_create_proposal,
+  multisig_deposit_to_treasury,
+  multisig_execute_proposal,
+  multisig_reject_proposal,
+  multisig_transfer_from_treasury,
+  openPerpTradeLong,
+  openPerpTradeShort,
+  openbookCreateMarket,
+  orcaClosePosition,
+  orcaCreateCLMM,
+  orcaCreateSingleSidedLiquidityPool,
+  orcaFetchPositions,
+  orcaOpenCenteredPositionWithLiquidity,
+  orcaOpenSingleSidedPosition,
+  parseTransaction,
   raydiumCreateAmmV4,
   raydiumCreateClmm,
   raydiumCreateCpmm,
   registerDomain,
   request_faucet_funds,
-  trade,
-  limitOrder,
-  batchOrder,
-  cancelAllOrders,
-  withdrawAll,
-  closePerpTradeShort,
-  closePerpTradeLong,
-  openPerpTradeShort,
-  openPerpTradeLong,
-  transfer,
-  getTokenDataByAddress,
-  getTokenDataByTicker,
+  resolveAllDomains,
+  resolveSolDomain,
+  rock_paper_scissor,
+  sendCompressedAirdrop,
+  sendTransactionWithPriorityFee,
   stakeWithJup,
   stakeWithSolayer,
-  sendCompressedAirdrop,
-  orcaCreateSingleSidedLiquidityPool,
-  orcaCreateCLMM,
-  orcaOpenCenteredPositionWithLiquidity,
-  orcaOpenSingleSidedPosition,
-  FEE_TIERS,
-  fetchPrice,
-  getAllDomainsTLDs,
-  getAllRegisteredAllDomains,
-  getOwnedDomainsForTLD,
-  getMainAllDomainsDomain,
-  getOwnedAllDomains,
-  resolveAllDomains,
-  create_gibwork_task,
-  orcaClosePosition,
-  orcaFetchPositions,
-  rock_paper_scissor,
-  create_TipLink,
-  listNFTForSale,
-  cancelListing,
-  closeEmptyTokenAccounts,
-  fetchTokenReportSummary,
-  fetchTokenDetailedReport,
-  fetchPythPrice,
-  fetchPythPriceFeedID,
-  flashOpenTrade,
-  flashCloseTrade,
-  createCollection,
-  createSingle,
-  multisig_transfer_from_treasury,
-  create_squads_multisig,
-  multisig_create_proposal,
-  multisig_deposit_to_treasury,
-  multisig_reject_proposal,
-  multisig_approve_proposal,
-  multisig_execute_proposal,
-  parseTransaction,
-  sendTransactionWithPriorityFee,
-  getAssetsByOwner,
-  getHeliusWebhook,
-  create_HeliusWebhook,
-  deleteHeliusWebhook,
+  trade,
+  transfer,
+  withdrawAll,
 } from "../tools";
-import {
-  Config,
-  TokenCheck,
-  CollectionDeployment,
-  CollectionOptions,
-  GibworkCreateTaskReponse,
-  JupiterTokenData,
-  MintCollectionNFTResponse,
-  PumpfunLaunchResponse,
-  PumpFunTokenOptions,
-  OrderParams,
-  FlashTradeParams,
-  FlashCloseTradeParams,
-  HeliusWebhookIdResponse,
-  HeliusWebhookResponse,
-} from "../types";
+
+import { DEFAULT_OPTIONS } from "../constants";
+import Decimal from "decimal.js";
+import bs58 from "bs58";
 
 /**
  * Main class for interacting with Solana blockchain
@@ -106,39 +108,25 @@ import {
  *
  * @class SolanaAgentKit
  * @property {Connection} connection - Solana RPC connection
- * @property {Keypair} wallet - Wallet keypair for signing transactions
+ * @property {WalletAdapter} wallet - Wallet that implements WalletAdapter for signing transactions
  * @property {PublicKey} wallet_address - Public key of the wallet
  * @property {Config} config - Configuration object
  */
 export class SolanaAgentKit {
   public connection: Connection;
-  public wallet: Keypair;
+  public wallet: WalletAdapter;
   public wallet_address: PublicKey;
   public config: Config;
 
-  /**
-   * @deprecated Using openai_api_key directly in constructor is deprecated.
-   * Please use the new constructor with Config object instead:
-   * @example
-   * const agent = new SolanaAgentKit(privateKey, rpcUrl, {
-   *   OPENAI_API_KEY: 'your-key'
-   * });
-   */
   constructor(
-    private_key: string,
-    rpc_url: string,
-    openai_api_key: string | null,
-  );
-  constructor(private_key: string, rpc_url: string, config: Config);
-  constructor(
-    private_key: string,
+    wallet: WalletAdapter,
     rpc_url: string,
     configOrKey: Config | string | null,
   ) {
     this.connection = new Connection(
       rpc_url || "https://api.mainnet-beta.solana.com",
     );
-    this.wallet = Keypair.fromSecretKey(bs58.decode(private_key));
+    this.wallet = wallet;
     this.wallet_address = this.wallet.publicKey;
 
     // Handle both old and new patterns
@@ -147,6 +135,16 @@ export class SolanaAgentKit {
     } else {
       this.config = configOrKey;
     }
+  }
+
+  getAnchorWallet(): Wallet {
+    const adapter = this.wallet;
+    return {
+      publicKey: adapter.publicKey,
+      signTransaction: adapter.signTransaction.bind(adapter),
+      signAllTransactions: adapter.signAllTransactions.bind(adapter),
+      payer: adapter as any,
+    };
   }
 
   // Tool methods

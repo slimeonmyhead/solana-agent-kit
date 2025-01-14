@@ -1,4 +1,5 @@
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, Transaction, VersionedTransaction } from "@solana/web3.js";
+
 import { SolanaAgentKit } from "../agent";
 import { z } from "zod";
 
@@ -259,4 +260,15 @@ export interface PriorityFeeResponse {
     transaction: string;
     options: { priorityLevel: string };
   }>;
+}
+
+export interface WalletAdapter {
+  publicKey: PublicKey;
+  secretKey: Uint8Array;
+  signTransaction<T extends Transaction | VersionedTransaction>(
+    transaction: T,
+  ): Promise<T>;
+  signAllTransactions<T extends Transaction | VersionedTransaction>(
+    transactions: T[],
+  ): Promise<T[]>;
 }

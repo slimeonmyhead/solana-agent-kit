@@ -1,15 +1,16 @@
-import { SolanaAgentKit } from "../agent";
 import {
   Keypair,
   Signer,
+  Transaction,
   TransactionInstruction,
   TransactionMessage,
   VersionedTransaction,
-  Transaction,
 } from "@solana/web3.js";
+
 import { ComputeBudgetProgram } from "@solana/web3.js";
-import bs58 from "bs58";
 import { PriorityFeeResponse } from "../types/index";
+import { SolanaAgentKit } from "../agent";
+import bs58 from "bs58";
 
 const feeTiers = {
   min: 0.01,
@@ -64,7 +65,7 @@ export async function getComputeBudgetInstructions(
     legacyTransaction.add(computeBudgetLimitInstruction, ...instructions);
 
     // Sign the transaction
-    legacyTransaction.sign(agent.wallet);
+    const signedTx = await agent.wallet.signTransaction(legacyTransaction);
 
     // Use Helius API for priority fee calculation
     const response = await fetch(
@@ -78,7 +79,7 @@ export async function getComputeBudgetInstructions(
           method: "getPriorityFeeEstimate",
           params: [
             {
-              transaction: bs58.encode(legacyTransaction.serialize()),
+              transaction: bs58.encode(signedTx.serialize()),
               options: {
                 priorityLevel:
                   feeTier === "min"
@@ -149,16 +150,20 @@ export async function sendTx(
     instructions: allInstructions,
   }).compileToV0Message();
   const transaction = new VersionedTransaction(messageV0);
-  transaction.sign([agent.wallet, ...(otherKeypairs ?? [])] as Signer[]);
+  const signedTx = await agent.wallet.signTransaction(transaction);
+  if (otherKeypairs) {
+    signedTx.sign(otherKeypairs);
+  }
 
   const timeoutMs = 90000;
   const startTime = Date.now();
   while (Date.now() - startTime < timeoutMs) {
     const transactionStartTime = Date.now();
 
-    const signature = await agent.connection.sendTransaction(transaction, {
-      maxRetries: 0,
+    const signature = await agent.connection.sendTransaction(signedTx, {
+      maxRetries: 3,
       skipPreflight: false,
+      preflightCommitment: "confirmed",
     });
 
     const statuses = await agent.connection.getSignatureStatuses([signature]);

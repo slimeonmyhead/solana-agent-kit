@@ -1,12 +1,15 @@
-import { VersionedTransaction, PublicKey } from "@solana/web3.js";
-import { SolanaAgentKit } from "../../index";
+import { ComputeBudgetProgram, PublicKey, Transaction } from "@solana/web3.js";
 import {
-  TOKENS,
   DEFAULT_OPTIONS,
   JUP_API,
   JUP_REFERRAL_ADDRESS,
+  TOKENS,
 } from "../../constants";
+
+import { SolanaAgentKit } from "../../index";
 import { getMint } from "@solana/spl-token";
+import { sendTx } from "../../utils/send_tx";
+
 /**
  * Swap tokens using Jupiter Exchange
  * @param agent SolanaAgentKit instance
@@ -44,7 +47,8 @@ export async function trade(
           `&amount=${scaledAmount}` +
           `&slippageBps=${slippageBps}` +
           `&onlyDirectRoutes=true` +
-          `&maxAccounts=20` +
+          `&maxAccounts=64` +
+          `&asLegacyTransaction=true` +
           `${agent.config.JUPITER_FEE_BPS ? `&platformFeeBps=${agent.config.JUPITER_FEE_BPS}` : ""}`,
       )
     ).json();
@@ -72,19 +76,25 @@ export async function trade(
           quoteResponse,
           userPublicKey: agent.wallet_address.toString(),
           wrapAndUnwrapSol: true,
-          dynamicComputeUnitLimit: true,
+          dynamicComputeUnitLimit: false,
           prioritizationFeeLamports: "auto",
           feeAccount: feeAccount ? feeAccount.toString() : null,
+          asLegacyTransaction: true,
         }),
       })
     ).json();
     // Deserialize transaction
     const swapTransactionBuf = Buffer.from(swapTransaction, "base64");
 
-    const transaction = VersionedTransaction.deserialize(swapTransactionBuf);
+    const transaction = Transaction.from(swapTransactionBuf);
+    const filteredInstructions = transaction.instructions.filter(
+      (instruction) => {
+        const programId = instruction.programId;
+        return !programId.equals(ComputeBudgetProgram.programId);
+      },
+    );
     // Sign and send transaction
-    transaction.sign([agent.wallet]);
-    const signature = await agent.connection.sendTransaction(transaction);
+    const signature = await sendTx(agent, filteredInstructions);
 
     return signature;
   } catch (error: any) {

@@ -5,19 +5,20 @@ import {
   PublicKey,
   TransactionInstruction,
 } from "@solana/web3.js";
-import { SolanaAgentKit } from "../../index";
-import {
-  buildAndSignTx,
-  calculateComputeUnitPrice,
-  createRpc,
-  Rpc,
-  sendAndConfirmTx,
-  sleep,
-} from "@lightprotocol/stateless.js";
 import {
   CompressedTokenProgram,
   createTokenPool,
 } from "@lightprotocol/compressed-token";
+import {
+  Rpc,
+  buildAndSignTx,
+  calculateComputeUnitPrice,
+  createRpc,
+  sendAndConfirmTx,
+  sleep,
+} from "@lightprotocol/stateless.js";
+
+import { SolanaAgentKit } from "../../index";
 import { getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
 
 // arbitrary
@@ -195,7 +196,7 @@ async function processAll(
   const rpc = createRpc(url, url, url);
 
   const results = [];
-  let confirmedCount = 0;
+  const confirmedCount = 0;
   const totalBatches = instructionSets.length;
 
   const renderProgressBar = (current: number, total: number) => {
@@ -214,45 +215,47 @@ async function processAll(
     }
   };
 
-  for (let i = 0; i < instructionSets.length; i += MAX_CONCURRENT_TXS) {
-    const batchPromises = instructionSets
-      .slice(i, i + MAX_CONCURRENT_TXS)
-      .map((instructions, idx) =>
-        sendTransactionWithRetry(
-          rpc,
-          instructions,
-          payer,
-          lookupTableAccount,
-          i + idx,
-        ).then((signature) => {
-          confirmedCount++;
-          log("\r" + renderProgressBar(confirmedCount, totalBatches));
-          return signature;
-        }),
-      );
+  throw new Error("Not implemented");
 
-    const batchResults = await Promise.allSettled(batchPromises);
-    results.push(...batchResults);
-  }
+  // for (let i = 0; i < instructionSets.length; i += MAX_CONCURRENT_TXS) {
+  //   const batchPromises = instructionSets
+  //     .slice(i, i + MAX_CONCURRENT_TXS)
+  //     .map((instructions, idx) =>
+  //       sendTransactionWithRetry(
+  //         rpc,
+  //         instructions,
+  //         payer,
+  //         lookupTableAccount,
+  //         i + idx,
+  //       ).then((signature) => {
+  //         confirmedCount++;
+  //         log("\r" + renderProgressBar(confirmedCount, totalBatches));
+  //         return signature;
+  //       }),
+  //     );
 
-  log("\n");
+  //   const batchResults = await Promise.allSettled(batchPromises);
+  //   results.push(...batchResults);
+  // }
 
-  const failures = results
-    .filter((r) => r.status === "rejected")
-    .map((r, idx) => ({
-      index: idx,
-      error: (r as PromiseRejectedResult).reason,
-    }));
+  // log("\n");
 
-  if (failures.length > 0) {
-    throw new Error(
-      `Failed to process ${failures.length} batches: ${failures
-        .map((f) => f.error)
-        .join(", ")}`,
-    );
-  }
+  // const failures = results
+  //   .filter((r) => r.status === "rejected")
+  //   .map((r, idx) => ({
+  //     index: idx,
+  //     error: (r as PromiseRejectedResult).reason,
+  //   }));
 
-  return results.map((r) => (r as PromiseFulfilledResult<string>).value);
+  // if (failures.length > 0) {
+  //   throw new Error(
+  //     `Failed to process ${failures.length} batches: ${failures
+  //       .map((f) => f.error)
+  //       .join(", ")}`,
+  //   );
+  // }
+
+  // return results.map((r) => (r as PromiseFulfilledResult<string>).value);
 }
 
 async function sendTransactionWithRetry(
