@@ -76,8 +76,10 @@ export async function trade(
           userPublicKey: agent.wallet_address.toString(),
           wrapAndUnwrapSol: true,
           dynamicComputeUnitLimit: true,
-          prioritizationFeeLamports: "auto",
           feeAccount: feeAccount ? feeAccount.toString() : null,
+          prioritizationFeeLamports: {
+            autoMultiplier: 2,
+          },
         }),
       })
     ).json();
@@ -87,7 +89,7 @@ export async function trade(
     const transaction = VersionedTransaction.deserialize(swapTransactionBuf);
     const signedTx = await agent.wallet.signTransaction(transaction);
     const signature = await agent.connection.sendTransaction(signedTx, {
-      preflightCommitment: "confirmed",
+      skipPreflight: true,
       maxRetries: 3,
     });
 
