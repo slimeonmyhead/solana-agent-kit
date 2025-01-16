@@ -1,9 +1,12 @@
 import {
+  AddressLookupTableAccount,
+  Connection,
   Keypair,
   Signer,
   Transaction,
   TransactionInstruction,
   TransactionMessage,
+  TransactionSignature,
   VersionedTransaction,
 } from "@solana/web3.js";
 
@@ -133,6 +136,7 @@ export async function sendTx(
   agent: SolanaAgentKit,
   instructions: TransactionInstruction[],
   otherKeypairs?: Keypair[],
+  lookupTables: AddressLookupTableAccount[] = [],
 ) {
   const ixComputeBudget = await getComputeBudgetInstructions(
     agent,
@@ -148,11 +152,34 @@ export async function sendTx(
     payerKey: agent.wallet_address,
     recentBlockhash: ixComputeBudget.blockhash,
     instructions: allInstructions,
-  }).compileToV0Message();
+  }).compileToV0Message(lookupTables);
   const transaction = new VersionedTransaction(messageV0);
   const signedTx = await agent.wallet.signTransaction(transaction);
   if (otherKeypairs) {
     signedTx.sign(otherKeypairs);
+  }
+
+  try {
+    const timeout = 60000;
+    const startTime = Date.now();
+    let txtSig: TransactionSignature;
+
+    while (Date.now() - startTime < timeout) {
+      try {
+        txtSig = await agent.connection.sendRawTransaction(
+          transaction.serialize(),
+          {
+            skipPreflight: true,
+          },
+        );
+
+        return await pollTransactionConfirmation(txtSig, agent);
+      } catch (error) {
+        continue;
+      }
+    }
+  } catch (error) {
+    throw new Error(`Error sending smart transaction: ${error}`);
   }
 
   const signature = await agent.connection.sendTransaction(signedTx, {
@@ -168,4 +195,33 @@ export async function sendTx(
     lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
   });
   return signature;
+}
+
+async function pollTransactionConfirmation(
+  txtSig: TransactionSignature,
+  agent: SolanaAgentKit,
+): Promise<TransactionSignature> {
+  // 15 second timeout
+  const timeout = 15000;
+  // 5 second retry interval
+  const interval = 5000;
+  let elapsed = 0;
+
+  return new Promise<TransactionSignature>((resolve, reject) => {
+    const intervalId = setInterval(async () => {
+      elapsed += interval;
+
+      if (elapsed >= timeout) {
+        clearInterval(intervalId);
+        reject(new Error(`Transaction ${txtSig}'s confirmation timed out`));
+      }
+
+      const status = await agent.connection.getSignatureStatuses([txtSig]);
+
+      if (status?.value[0]?.confirmationStatus === "confirmed") {
+        clearInterval(intervalId);
+        resolve(txtSig);
+      }
+    }, interval);
+  });
 }
