@@ -167,7 +167,7 @@ export async function sendTx(
     while (Date.now() - startTime < timeout) {
       try {
         txtSig = await agent.connection.sendRawTransaction(
-          transaction.serialize(),
+          signedTx.serialize(),
           {
             skipPreflight: true,
           },
@@ -182,19 +182,7 @@ export async function sendTx(
     throw new Error(`Error sending smart transaction: ${error}`);
   }
 
-  const signature = await agent.connection.sendTransaction(signedTx, {
-    maxRetries: 3,
-    skipPreflight: false,
-    preflightCommitment: "confirmed",
-  });
-
-  const latestBlockhash = await agent.connection.getLatestBlockhash();
-  await agent.connection.confirmTransaction({
-    signature,
-    blockhash: latestBlockhash.blockhash,
-    lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-  });
-  return signature;
+  throw new Error(`Unknown error sending smart transaction`);
 }
 
 async function pollTransactionConfirmation(
