@@ -65,8 +65,4 @@ export class KeypairWallet implements BaseWallet {
       return t;
     });
   }
-
-  async signMessage(message: Uint8Array): Promise<Uint8Array> {
-    return message;
-  }
 }

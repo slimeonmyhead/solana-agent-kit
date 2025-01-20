@@ -1,6 +1,8 @@
+import { BaseWallet } from "./wallet";
 import { PublicKey } from "@solana/web3.js";
 import { SolanaAgentKit } from "../agent";
 import { z } from "zod";
+export { BaseWallet };
 
 export interface Config {
   OPENAI_API_KEY?: string;

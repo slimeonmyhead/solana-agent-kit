@@ -9,7 +9,7 @@ import {
 
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { SolanaAgentKit } from "../../index";
-import { sendTx } from "../..//utils/send_tx";
+import { sendTx } from "../../utils/send_tx";
 
 /**
  * Transfer SOL or SPL tokens to a recipient

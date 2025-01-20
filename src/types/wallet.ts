@@ -52,11 +52,4 @@ export interface BaseWallet {
   //     transaction: T,
   //     options?: SendOptions
   // ): Promise<{ signature: TransactionSignature }>;
-
-  /**
-   * Sign a message
-   * @param {Uint8Array} message - The message to be signed
-   * @returns {Promise<Uint8Array>} Promise resolving to the signed message
-   */
-  signMessage(message: Uint8Array): Promise<Uint8Array>;
 }
