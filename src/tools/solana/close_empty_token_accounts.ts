@@ -1,15 +1,16 @@
 import {
+  AccountLayout,
+  TOKEN_2022_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
+  createCloseAccountInstruction,
+} from "@solana/spl-token";
+import {
   PublicKey,
   Transaction,
   TransactionInstruction,
 } from "@solana/web3.js";
+
 import { SolanaAgentKit } from "../../agent";
-import {
-  AccountLayout,
-  createCloseAccountInstruction,
-  TOKEN_2022_PROGRAM_ID,
-  TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
 
 /**
  * Close Empty SPL Token accounts of the agent
@@ -46,9 +47,15 @@ export async function closeEmptyTokenAccounts(
       };
     }
 
-    const signature = await agent.connection.sendTransaction(transaction, [
-      agent.wallet,
-    ]);
+    const signedTx = await agent.wallet.signTransaction(transaction);
+
+    const signature = await agent.connection.sendRawTransaction(
+      signedTx.serialize(),
+      {
+        skipPreflight: true,
+        maxRetries: 3,
+      },
+    );
 
     return { signature, size };
   } catch (error) {

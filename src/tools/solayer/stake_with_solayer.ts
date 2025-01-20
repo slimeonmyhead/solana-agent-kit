@@ -1,5 +1,5 @@
-import { VersionedTransaction } from "@solana/web3.js";
 import { SolanaAgentKit } from "../../index";
+import { VersionedTransaction } from "@solana/web3.js";
 
 /**
  * Stake SOL with Solayer
@@ -42,11 +42,14 @@ export async function stakeWithSolayer(
     txn.message.recentBlockhash = blockhash;
 
     // Sign and send transaction
-    txn.sign([agent.wallet]);
-    const signature = await agent.connection.sendTransaction(txn, {
-      preflightCommitment: "confirmed",
-      maxRetries: 3,
-    });
+    const signedTx = await agent.wallet.signTransaction(txn);
+    const signature = await agent.connection.sendRawTransaction(
+      signedTx.serialize(),
+      {
+        preflightCommitment: "confirmed",
+        maxRetries: 3,
+      },
+    );
 
     // Wait for confirmation
     const latestBlockhash = await agent.connection.getLatestBlockhash();

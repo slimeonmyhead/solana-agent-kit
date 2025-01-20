@@ -47,16 +47,15 @@ export async function initClients(
 ) {
   const wallet: IWallet = {
     publicKey: agent.wallet.publicKey,
-    payer: agent.wallet,
     signAllTransactions: async (txs) => {
+      const signedTxs = [];
       for (const tx of txs) {
-        tx.sign(agent.wallet);
+        signedTxs.push(await agent.wallet.signTransaction(tx));
       }
-      return txs;
+      return signedTxs;
     },
     signTransaction: async (tx) => {
-      tx.sign(agent.wallet);
-      return tx;
+      return await agent.wallet.signTransaction(tx);
     },
   };
 
@@ -217,9 +216,9 @@ export async function depositToDriftUserAccount(
       }),
     );
     tx.recentBlockhash = latestBlockhash.blockhash;
-    tx.sign(agent.wallet);
+    const signedTx = await agent.wallet.signTransaction(tx);
     const txSignature = await driftClient.txSender.sendRawTransaction(
-      tx.serialize(),
+      signedTx.serialize(),
       { ...driftClient.opts },
     );
 
@@ -282,10 +281,10 @@ export async function withdrawFromDriftUserAccount(
       }),
     );
     tx.recentBlockhash = latestBlockhash.blockhash;
-    tx.sign(agent.wallet);
+    const signedTx = await agent.wallet.signTransaction(tx);
 
     const txSignature = await driftClient.txSender.sendRawTransaction(
-      tx.serialize(),
+      signedTx.serialize(),
       { ...driftClient.opts },
     );
 

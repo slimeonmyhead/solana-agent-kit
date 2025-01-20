@@ -1,12 +1,20 @@
-import { VersionedTransaction, PublicKey } from "@solana/web3.js";
-import { SolanaAgentKit } from "../../index";
 import {
-  TOKENS,
+  AddressLookupTableAccount,
+  PublicKey,
+  TransactionInstruction,
+  VersionedTransaction,
+} from "@solana/web3.js";
+import {
   DEFAULT_OPTIONS,
   JUP_API,
   JUP_REFERRAL_ADDRESS,
+  TOKENS,
 } from "../../constants";
+
+import { SolanaAgentKit } from "../../index";
 import { getMint } from "@solana/spl-token";
+import { sendTx } from "../../utils/send_tx";
+
 /**
  * Swap tokens using Jupiter Exchange
  * @param agent SolanaAgentKit instance
@@ -65,15 +73,15 @@ export async function trade(
       );
     }
 
-    const { swapTransaction } = await (
-      await fetch("https://quote-api.jup.ag/v6/swap", {
+    const instructions = await (
+      await fetch("https://quote-api.jup.ag/v6/swap-instructions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          // quoteResponse from /quote or /swap api
           quoteResponse,
-          userPublicKey: agent.wallet_address.toString(),
           wrapAndUnwrapSol: true,
           dynamicComputeUnitLimit: true,
           dynamicSlippage: true,
@@ -85,16 +93,78 @@ export async function trade(
             },
           },
           feeAccount: feeAccount ? feeAccount.toString() : null,
+          userPublicKey: agent.wallet.publicKey.toBase58(),
+          // other Jupiter request fields if needed
         }),
       })
     ).json();
     // Deserialize transaction
-    const swapTransactionBuf = Buffer.from(swapTransaction, "base64");
+    if (instructions.error) {
+      throw new Error("Failed to get swap instructions: " + instructions.error);
+    }
 
-    const transaction = VersionedTransaction.deserialize(swapTransactionBuf);
-    // Sign and send transaction
-    transaction.sign([agent.wallet]);
-    const signature = await agent.connection.sendTransaction(transaction);
+    const {
+      tokenLedgerInstruction, // If using `useTokenLedger = true`
+      computeBudgetInstructions, // Jupiter’s default compute budget instructions (we will NOT use these)
+      setupInstructions, // Setup ATAs if needed
+      swapInstruction: swapInstructionPayload,
+      cleanupInstruction, // Unwrap SOL, if you used wrapAndUnwrapSol
+      addressLookupTableAddresses,
+    } = instructions;
+
+    const deserializeInstruction = (instruction: any) => {
+      return new TransactionInstruction({
+        programId: new PublicKey(instruction.programId),
+        keys: instruction.accounts.map((key: any) => ({
+          pubkey: new PublicKey(key.pubkey),
+          isSigner: key.isSigner,
+          isWritable: key.isWritable,
+        })),
+        data: Buffer.from(instruction.data, "base64"),
+      });
+    };
+
+    const getAddressLookupTableAccounts = async (
+      keys: string[],
+    ): Promise<AddressLookupTableAccount[]> => {
+      const addressLookupTableAccountInfos =
+        await agent.connection.getMultipleAccountsInfo(
+          keys.map((key) => new PublicKey(key)),
+        );
+
+      return addressLookupTableAccountInfos.reduce(
+        (acc: any, accountInfo: any, index: any) => {
+          const addressLookupTableAddress = keys[index];
+          if (accountInfo) {
+            const addressLookupTableAccount = new AddressLookupTableAccount({
+              key: new PublicKey(addressLookupTableAddress),
+              state: AddressLookupTableAccount.deserialize(accountInfo.data),
+            });
+            acc.push(addressLookupTableAccount);
+          }
+
+          return acc;
+        },
+        new Array<AddressLookupTableAccount>(),
+      );
+    };
+
+    const addressLookupTableAccounts: AddressLookupTableAccount[] = [];
+
+    addressLookupTableAccounts.push(
+      ...(await getAddressLookupTableAccounts(addressLookupTableAddresses)),
+    );
+
+    const signature = await sendTx(
+      agent,
+      [
+        ...setupInstructions.map(deserializeInstruction),
+        deserializeInstruction(swapInstructionPayload),
+        deserializeInstruction(cleanupInstruction),
+      ],
+      undefined,
+      addressLookupTableAccounts,
+    );
 
     return signature;
   } catch (error: any) {

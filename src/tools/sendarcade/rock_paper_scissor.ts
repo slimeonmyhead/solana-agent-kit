@@ -1,4 +1,5 @@
-import { sendAndConfirmTransaction, Transaction } from "@solana/web3.js";
+import { Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
+
 import { SolanaAgentKit } from "../../agent";
 
 export async function rock_paper_scissor(
@@ -23,16 +24,14 @@ export async function rock_paper_scissor(
     const data = await res.json();
     if (data.transaction) {
       const txn = Transaction.from(Buffer.from(data.transaction, "base64"));
-      txn.sign(agent.wallet);
-      txn.recentBlockhash = (
+      const signedTx = await agent.wallet.signTransaction(txn);
+      signedTx.recentBlockhash = (
         await agent.connection.getLatestBlockhash()
       ).blockhash;
-      const sig = await sendAndConfirmTransaction(
-        agent.connection,
-        txn,
-        [agent.wallet],
-        { commitment: "confirmed" },
+      const sig = await agent.connection.sendRawTransaction(
+        signedTx.serialize(),
       );
+      await agent.connection.confirmTransaction(sig, "confirmed");
       const href = data.links?.next?.href;
       return await outcome(agent, sig, href);
     } else {
@@ -93,8 +92,8 @@ async function won(agent: SolanaAgentKit, href: string): Promise<string> {
     const data: any = await res.json();
     if (data.transaction) {
       const txn = Transaction.from(Buffer.from(data.transaction, "base64"));
-      txn.partialSign(agent.wallet);
-      await agent.connection.sendRawTransaction(txn.serialize(), {
+      const signedTx = await agent.wallet.signTransaction(txn);
+      await agent.connection.sendRawTransaction(signedTx.serialize(), {
         preflightCommitment: "confirmed",
       });
     } else {

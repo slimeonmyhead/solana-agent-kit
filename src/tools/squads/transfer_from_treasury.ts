@@ -1,17 +1,19 @@
-import { SolanaAgentKit } from "../../index";
+import * as multisig from "@sqds/multisig";
+
 import {
   PublicKey,
   SystemProgram,
   TransactionInstruction,
   TransactionMessage,
 } from "@solana/web3.js";
-import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import {
-  getAssociatedTokenAddress,
   createTransferInstruction,
+  getAssociatedTokenAddress,
   getMint,
 } from "@solana/spl-token";
-import * as multisig from "@sqds/multisig";
+
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { SolanaAgentKit } from "../../index";
 const { Multisig } = multisig.accounts;
 
 /**
@@ -87,10 +89,8 @@ export async function multisig_transfer_from_treasury(
       transactionMessage: transferMessage,
     });
 
-    multisigTx.sign([agent.wallet]);
-    const tx = await agent.connection.sendRawTransaction(
-      multisigTx.serialize(),
-    );
+    const signedTx = await agent.wallet.signTransaction(multisigTx);
+    const tx = await agent.connection.sendRawTransaction(signedTx.serialize());
     return tx;
   } catch (error: any) {
     throw new Error(`Transfer failed: ${error}`);

@@ -5,19 +5,20 @@ import {
   PublicKey,
   TransactionInstruction,
 } from "@solana/web3.js";
-import { SolanaAgentKit } from "../../index";
-import {
-  buildAndSignTx,
-  calculateComputeUnitPrice,
-  createRpc,
-  Rpc,
-  sendAndConfirmTx,
-  sleep,
-} from "@lightprotocol/stateless.js";
 import {
   CompressedTokenProgram,
   createTokenPool,
 } from "@lightprotocol/compressed-token";
+import {
+  Rpc,
+  buildAndSignTx,
+  calculateComputeUnitPrice,
+  createRpc,
+  sendAndConfirmTx,
+  sleep,
+} from "@lightprotocol/stateless.js";
+
+import { SolanaAgentKit } from "../../index";
 import { getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
 
 // arbitrary
@@ -64,58 +65,59 @@ export async function sendCompressedAirdrop(
   priorityFeeInLamports: number,
   shouldLog: boolean = false,
 ): Promise<string[]> {
-  if (recipients.length > MAX_AIRDROP_RECIPIENTS) {
-    throw new Error(
-      `Max airdrop can be ${MAX_AIRDROP_RECIPIENTS} recipients at a time. For more scale, use open source ZK Compression airdrop tools such as https://github.com/helius-labs/airship.`,
-    );
-  }
+  throw new Error("Not implemented");
+  // if (recipients.length > MAX_AIRDROP_RECIPIENTS) {
+  //   throw new Error(
+  //     `Max airdrop can be ${MAX_AIRDROP_RECIPIENTS} recipients at a time. For more scale, use open source ZK Compression airdrop tools such as https://github.com/helius-labs/airship.`,
+  //   );
+  // }
 
-  const url = agent.connection.rpcEndpoint;
-  if (url.includes("devnet")) {
-    throw new Error("Devnet is not supported for airdrop. Please use mainnet.");
-  }
-  if (!url.includes("helius")) {
-    console.warn(
-      "Warning: Must use RPC with ZK Compression support. Double check with your RPC provider if in doubt.",
-    );
-  }
+  // const url = agent.connection.rpcEndpoint;
+  // if (url.includes("devnet")) {
+  //   throw new Error("Devnet is not supported for airdrop. Please use mainnet.");
+  // }
+  // if (!url.includes("helius")) {
+  //   console.warn(
+  //     "Warning: Must use RPC with ZK Compression support. Double check with your RPC provider if in doubt.",
+  //   );
+  // }
 
-  try {
-    await getOrCreateAssociatedTokenAccount(
-      agent.connection,
-      agent.wallet,
-      mintAddress,
-      agent.wallet.publicKey,
-    );
-  } catch (error) {
-    console.error(error);
-    throw new Error(
-      "Source token account not found and failed to create it. Please add funds to your wallet and try again.",
-    );
-  }
+  // try {
+  //   await getOrCreateAssociatedTokenAccount(
+  //     agent.connection,
+  //     agent.wallet,
+  //     mintAddress,
+  //     agent.wallet.publicKey,
+  //   );
+  // } catch (error) {
+  //   console.error(error);
+  //   throw new Error(
+  //     "Source token account not found and failed to create it. Please add funds to your wallet and try again.",
+  //   );
+  // }
 
-  try {
-    await createTokenPool(
-      agent.connection as unknown as Rpc,
-      agent.wallet,
-      mintAddress,
-    );
-  } catch (error: any) {
-    if (error.message.includes("already in use")) {
-      // skip
-    } else {
-      throw error;
-    }
-  }
+  // try {
+  //   await createTokenPool(
+  //     agent.connection as unknown as Rpc,
+  //     agent.wallet,
+  //     mintAddress,
+  //   );
+  // } catch (error: any) {
+  //   if (error.message.includes("already in use")) {
+  //     // skip
+  //   } else {
+  //     throw error;
+  //   }
+  // }
 
-  return await processAll(
-    agent,
-    amount * 10 ** decimals,
-    mintAddress,
-    recipients,
-    priorityFeeInLamports,
-    shouldLog,
-  );
+  // return await processAll(
+  //   agent,
+  //   amount * 10 ** decimals,
+  //   mintAddress,
+  //   recipients,
+  //   priorityFeeInLamports,
+  //   shouldLog,
+  // );
 }
 
 async function processAll(
@@ -129,130 +131,134 @@ async function processAll(
   const mintAddress = mint;
   const payer = agent.wallet;
 
-  const sourceTokenAccount = await getOrCreateAssociatedTokenAccount(
-    agent.connection,
-    agent.wallet,
-    mintAddress,
-    agent.wallet.publicKey,
-  );
+  throw new Error("Not implemented");
 
-  const maxRecipientsPerInstruction = 5;
-  const maxIxs = 3; // empirically determined (as of 12/15/2024)
-  const lookupTableAddress = new PublicKey(
-    "9NYFyEqPkyXUhkerbGHXUXkvb4qpzeEdHuGpgbgpH1NJ",
-  );
+  // const sourceTokenAccount = await getOrCreateAssociatedTokenAccount(
+  //   agent.connection,
+  //   agent.wallet,
+  //   mintAddress,
+  //   agent.wallet.publicKey,
+  // );
 
-  const lookupTableAccount = (
-    await agent.connection.getAddressLookupTable(lookupTableAddress)
-  ).value!;
+  // const maxRecipientsPerInstruction = 5;
+  // const maxIxs = 3; // empirically determined (as of 12/15/2024)
+  // const lookupTableAddress = new PublicKey(
+  //   "9NYFyEqPkyXUhkerbGHXUXkvb4qpzeEdHuGpgbgpH1NJ",
+  // );
 
-  const batches: PublicKey[][] = [];
-  for (
-    let i = 0;
-    i < recipients.length;
-    i += maxRecipientsPerInstruction * maxIxs
-  ) {
-    batches.push(recipients.slice(i, i + maxRecipientsPerInstruction * maxIxs));
-  }
+  // const lookupTableAccount = (
+  //   await agent.connection.getAddressLookupTable(lookupTableAddress)
+  // ).value!;
 
-  const instructionSets = await Promise.all(
-    batches.map(async (recipientBatch) => {
-      const instructions: TransactionInstruction[] = [
-        ComputeBudgetProgram.setComputeUnitLimit({ units: 500_000 }),
-        ComputeBudgetProgram.setComputeUnitPrice({
-          microLamports: calculateComputeUnitPrice(
-            priorityFeeInLamports,
-            500_000,
-          ),
-        }),
-      ];
+  // const batches: PublicKey[][] = [];
+  // for (
+  //   let i = 0;
+  //   i < recipients.length;
+  //   i += maxRecipientsPerInstruction * maxIxs
+  // ) {
+  //   batches.push(recipients.slice(i, i + maxRecipientsPerInstruction * maxIxs));
+  // }
 
-      const compressIxPromises = [];
-      for (
-        let i = 0;
-        i < recipientBatch.length;
-        i += maxRecipientsPerInstruction
-      ) {
-        const batch = recipientBatch.slice(i, i + maxRecipientsPerInstruction);
-        compressIxPromises.push(
-          CompressedTokenProgram.compress({
-            payer: payer.publicKey,
-            owner: payer.publicKey,
-            source: sourceTokenAccount.address,
-            toAddress: batch,
-            amount: batch.map(() => amount),
-            mint: mintAddress,
-          }),
-        );
-      }
+  // const instructionSets = await Promise.all(
+  //   batches.map(async (recipientBatch) => {
+  //     const instructions: TransactionInstruction[] = [
+  //       ComputeBudgetProgram.setComputeUnitLimit({ units: 500_000 }),
+  //       ComputeBudgetProgram.setComputeUnitPrice({
+  //         microLamports: calculateComputeUnitPrice(
+  //           priorityFeeInLamports,
+  //           500_000,
+  //         ),
+  //       }),
+  //     ];
 
-      const compressIxs = await Promise.all(compressIxPromises);
-      return [...instructions, ...compressIxs];
-    }),
-  );
+  //     const compressIxPromises = [];
+  //     for (
+  //       let i = 0;
+  //       i < recipientBatch.length;
+  //       i += maxRecipientsPerInstruction
+  //     ) {
+  //       const batch = recipientBatch.slice(i, i + maxRecipientsPerInstruction);
+  //       compressIxPromises.push(
+  //         CompressedTokenProgram.compress({
+  //           payer: payer.publicKey,
+  //           owner: payer.publicKey,
+  //           source: sourceTokenAccount.address,
+  //           toAddress: batch,
+  //           amount: batch.map(() => amount),
+  //           mint: mintAddress,
+  //         }),
+  //       );
+  //     }
 
-  const url = agent.connection.rpcEndpoint;
-  const rpc = createRpc(url, url, url);
+  //     const compressIxs = await Promise.all(compressIxPromises);
+  //     return [...instructions, ...compressIxs];
+  //   }),
+  // );
 
-  const results = [];
-  let confirmedCount = 0;
-  const totalBatches = instructionSets.length;
+  // const url = agent.connection.rpcEndpoint;
+  // const rpc = createRpc(url, url, url);
 
-  const renderProgressBar = (current: number, total: number) => {
-    const percentage = Math.floor((current / total) * 100);
-    const filled = Math.floor((percentage / 100) * 20);
-    const empty = 20 - filled;
-    const bar = "█".repeat(filled) + "░".repeat(empty);
-    return `Airdropped to ${Math.min(current * 15, recipients.length)}/${
-      recipients.length
-    } recipients [${bar}] ${percentage}%`;
-  };
+  // const results = [];
+  // const confirmedCount = 0;
+  // const totalBatches = instructionSets.length;
 
-  const log = (message: string) => {
-    if (shouldLog && typeof process !== "undefined" && process.stdout) {
-      process.stdout.write(message);
-    }
-  };
+  // const renderProgressBar = (current: number, total: number) => {
+  //   const percentage = Math.floor((current / total) * 100);
+  //   const filled = Math.floor((percentage / 100) * 20);
+  //   const empty = 20 - filled;
+  //   const bar = "█".repeat(filled) + "░".repeat(empty);
+  //   return `Airdropped to ${Math.min(current * 15, recipients.length)}/${
+  //     recipients.length
+  //   } recipients [${bar}] ${percentage}%`;
+  // };
 
-  for (let i = 0; i < instructionSets.length; i += MAX_CONCURRENT_TXS) {
-    const batchPromises = instructionSets
-      .slice(i, i + MAX_CONCURRENT_TXS)
-      .map((instructions, idx) =>
-        sendTransactionWithRetry(
-          rpc,
-          instructions,
-          payer,
-          lookupTableAccount,
-          i + idx,
-        ).then((signature) => {
-          confirmedCount++;
-          log("\r" + renderProgressBar(confirmedCount, totalBatches));
-          return signature;
-        }),
-      );
+  // const log = (message: string) => {
+  //   if (shouldLog && typeof process !== "undefined" && process.stdout) {
+  //     process.stdout.write(message);
+  //   }
+  // };
 
-    const batchResults = await Promise.allSettled(batchPromises);
-    results.push(...batchResults);
-  }
+  throw new Error("Not implemented");
 
-  log("\n");
+  // for (let i = 0; i < instructionSets.length; i += MAX_CONCURRENT_TXS) {
+  //   const batchPromises = instructionSets
+  //     .slice(i, i + MAX_CONCURRENT_TXS)
+  //     .map((instructions, idx) =>
+  //       sendTransactionWithRetry(
+  //         rpc,
+  //         instructions,
+  //         payer,
+  //         lookupTableAccount,
+  //         i + idx,
+  //       ).then((signature) => {
+  //         confirmedCount++;
+  //         log("\r" + renderProgressBar(confirmedCount, totalBatches));
+  //         return signature;
+  //       }),
+  //     );
 
-  const failures = results
-    .filter((r) => r.status === "rejected")
-    .map((r, idx) => ({
-      index: idx,
-      error: (r as PromiseRejectedResult).reason,
-    }));
+  //   const batchResults = await Promise.allSettled(batchPromises);
+  //   results.push(...batchResults);
+  // }
 
-  if (failures.length > 0) {
-    throw new Error(
-      `Failed to process ${failures.length} batches: ${failures
-        .map((f) => f.error)
-        .join(", ")}`,
-    );
-  }
+  // log("\n");
 
-  return results.map((r) => (r as PromiseFulfilledResult<string>).value);
+  // const failures = results
+  //   .filter((r) => r.status === "rejected")
+  //   .map((r, idx) => ({
+  //     index: idx,
+  //     error: (r as PromiseRejectedResult).reason,
+  //   }));
+
+  // if (failures.length > 0) {
+  //   throw new Error(
+  //     `Failed to process ${failures.length} batches: ${failures
+  //       .map((f) => f.error)
+  //       .join(", ")}`,
+  //   );
+  // }
+
+  // return results.map((r) => (r as PromiseFulfilledResult<string>).value);
 }
 
 async function sendTransactionWithRetry(

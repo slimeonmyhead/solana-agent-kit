@@ -1,5 +1,6 @@
-import { SolanaAgentKit } from "../../index";
 import * as multisig from "@sqds/multisig";
+
+import { SolanaAgentKit } from "../../index";
 const { Multisig } = multisig.accounts;
 
 /**
@@ -41,10 +42,8 @@ export async function multisig_reject_proposal(
       member: agent.wallet.publicKey,
     });
 
-    multisigTx.sign([agent.wallet]);
-    const tx = await agent.connection.sendRawTransaction(
-      multisigTx.serialize(),
-    );
+    const signedTx = await agent.wallet.signTransaction(multisigTx);
+    const tx = await agent.connection.sendRawTransaction(signedTx.serialize());
     return tx;
   } catch (error: any) {
     throw new Error(`Transfer failed: ${error}`);

@@ -1,13 +1,14 @@
-import { SolanaAgentKit } from "../../index";
-import { TensorSwapSDK } from "@tensor-oss/tensorswap-sdk";
-import { PublicKey, Transaction } from "@solana/web3.js";
 import { AnchorProvider, Wallet } from "@coral-xyz/anchor";
-import { BN } from "bn.js";
+import { PublicKey, Transaction } from "@solana/web3.js";
 import {
-  getAssociatedTokenAddress,
   TOKEN_PROGRAM_ID,
   getAccount,
+  getAssociatedTokenAddress,
 } from "@solana/spl-token";
+
+import { BN } from "bn.js";
+import { SolanaAgentKit } from "../../index";
+import { TensorSwapSDK } from "@tensor-oss/tensorswap-sdk";
 
 export async function listNFTForSale(
   agent: SolanaAgentKit,
@@ -41,7 +42,7 @@ export async function listNFTForSale(
 
     const provider = new AnchorProvider(
       agent.connection,
-      new Wallet(agent.wallet),
+      agent.getAnchorWallet(),
       AnchorProvider.defaultOptions(),
     );
 
@@ -63,8 +64,8 @@ export async function listNFTForSale(
 
     const transaction = new Transaction();
     transaction.add(...tx.ixs);
-    return await agent.connection.sendTransaction(transaction, [
-      agent.wallet,
+    const signedTx = await agent.wallet.signTransaction(transaction);
+    return await agent.connection.sendTransaction(signedTx, [
       ...tx.extraSigners,
     ]);
   } catch (error: any) {
@@ -79,7 +80,7 @@ export async function cancelListing(
 ): Promise<string> {
   const provider = new AnchorProvider(
     agent.connection,
-    new Wallet(agent.wallet),
+    agent.getAnchorWallet(),
     AnchorProvider.defaultOptions(),
   );
 
@@ -102,8 +103,6 @@ export async function cancelListing(
 
   const transaction = new Transaction();
   transaction.add(...tx.ixs);
-  return await agent.connection.sendTransaction(transaction, [
-    agent.wallet,
-    ...tx.extraSigners,
-  ]);
+  const signedTx = await agent.wallet.signTransaction(transaction);
+  return await agent.connection.sendTransaction(signedTx, [...tx.extraSigners]);
 }

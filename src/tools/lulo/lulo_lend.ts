@@ -1,5 +1,5 @@
-import { VersionedTransaction } from "@solana/web3.js";
 import { SolanaAgentKit } from "../../index";
+import { VersionedTransaction } from "@solana/web3.js";
 
 /**
  * Lend tokens for yields using Lulo
@@ -44,9 +44,9 @@ export async function luloLend(
     luloTxn.message.recentBlockhash = blockhash;
 
     // Sign and send transaction
-    luloTxn.sign([agent.wallet]);
+    const signedTx = await agent.wallet.signTransaction(luloTxn);
 
-    const signature = await agent.connection.sendTransaction(luloTxn, {
+    const signature = await agent.connection.sendTransaction(signedTx, {
       preflightCommitment: "confirmed",
       maxRetries: 3,
     });

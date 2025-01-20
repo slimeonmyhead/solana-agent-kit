@@ -1,8 +1,8 @@
 import AmmImpl from "@mercurial-finance/dynamic-amm-sdk";
-import { SolanaAgentKit } from "../../agent";
 import BN from "bn.js";
-import { PublicKey } from "@solana/web3.js";
 import { CustomizableParams } from "@mercurial-finance/dynamic-amm-sdk/dist/cjs/src/amm/types";
+import { PublicKey } from "@solana/web3.js";
+import { SolanaAgentKit } from "../../agent";
 import { sendTx } from "../../utils/send_tx";
 
 /**
@@ -39,9 +39,7 @@ export async function createMeteoraDynamicAMMPool(
       customizableParams,
     );
 
-  const initPoolTxHash = await sendTx(agent, initPoolTx.instructions, [
-    agent.wallet,
-  ]);
+  const initPoolTxHash = await sendTx(agent, initPoolTx.instructions);
 
   return initPoolTxHash;
 }

@@ -10,3 +10,4 @@ export * from "./types";
 // Export action system
 export { ACTIONS } from "./actions";
 export * from "./utils/actionExecutor";
+export { KeypairWallet } from "./wallet/KeypairWallet";

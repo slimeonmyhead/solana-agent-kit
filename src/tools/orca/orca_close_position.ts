@@ -4,16 +4,17 @@ import {
   TransactionMessage,
   VersionedTransaction,
 } from "@solana/web3.js";
-import { SolanaAgentKit } from "../../agent";
-import { Wallet } from "../../utils/keypair";
 import {
   ORCA_WHIRLPOOL_PROGRAM_ID,
+  PDAUtil,
   WhirlpoolContext,
   buildWhirlpoolClient,
-  PDAUtil,
 } from "@orca-so/whirlpools-sdk";
-import { sendTx } from "../../utils/send_tx";
+
 import { Percentage } from "@orca-so/common-sdk";
+import { SolanaAgentKit } from "../../agent";
+import { Wallet } from "../../utils/keypair";
+import { sendTx } from "../../utils/send_tx";
 
 /**
  * # Closes a Liquidity Position in an Orca Whirlpool
@@ -48,7 +49,7 @@ export async function orcaClosePosition(
   positionMintAddress: PublicKey,
 ): Promise<string> {
   try {
-    const wallet = new Wallet(agent.wallet);
+    const wallet = agent.getAnchorWallet();
     const ctx = WhirlpoolContext.from(
       agent.connection,
       wallet,

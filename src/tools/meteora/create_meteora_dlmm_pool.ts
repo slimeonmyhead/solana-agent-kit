@@ -1,7 +1,8 @@
-import { SolanaAgentKit } from "../../agent";
+import DLMM, { ActivationType } from "@meteora-ag/dlmm";
+
 import BN from "bn.js";
 import { PublicKey } from "@solana/web3.js";
-import DLMM, { ActivationType } from "@meteora-ag/dlmm";
+import { SolanaAgentKit } from "../../agent";
 import { getMint } from "@solana/spl-token";
 import { sendTx } from "../../utils/send_tx";
 
@@ -62,9 +63,7 @@ export async function createMeteoraDlmmPool(
     },
   );
 
-  const initPoolTxHash = await sendTx(agent, initPoolTx.instructions, [
-    agent.wallet,
-  ]);
+  const initPoolTxHash = await sendTx(agent, initPoolTx.instructions);
 
   return initPoolTxHash;
 }
