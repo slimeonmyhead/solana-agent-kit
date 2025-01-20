@@ -84,16 +84,11 @@ export async function getComputeBudgetInstructions(
             {
               transaction: bs58.encode(signedTx.serialize()),
               options: {
-                priorityLevel:
-                  feeTier === "min"
-                    ? "Min"
-                    : feeTier === "mid"
-                      ? "Medium"
-                      : "High",
+                recommended: true
               },
             },
           ],
-        } as PriorityFeeResponse),
+        }),
       },
     );
 
@@ -101,7 +96,7 @@ export async function getComputeBudgetInstructions(
     if (data.error) {
       throw new Error("Error fetching priority fee from Helius API");
     }
-    priorityFee = data.result.priorityFeeEstimate;
+    priorityFee = Math.floor(data.result.priorityFeeEstimate * 1.2);
   } else {
     // Use default implementation for priority fee calculation
     priorityFee = await agent.connection
@@ -189,10 +184,10 @@ async function pollTransactionConfirmation(
   txtSig: TransactionSignature,
   agent: SolanaAgentKit,
 ): Promise<TransactionSignature> {
-  // 15 second timeout
-  const timeout = 15000;
-  // 5 second retry interval
-  const interval = 5000;
+  // 4 second timeout
+  const timeout = 4000;
+  // 2 second retry interval
+  const interval = 2000;
   let elapsed = 0;
 
   return new Promise<TransactionSignature>((resolve, reject) => {
