@@ -47,8 +47,9 @@ export async function transfer(
         agent.wallet_address,
       );
       const toAta = await getAssociatedTokenAddress(mint, to);
-      const toAtaAcc = await getAccount(agent.connection, toAta);
-      if (!toAtaAcc) {
+      try {
+        const toAtaAcc = await getAccount(agent.connection, toAta);
+      } catch {
         transaction.add(
           createAssociatedTokenAccountInstruction(
             agent.wallet_address,
