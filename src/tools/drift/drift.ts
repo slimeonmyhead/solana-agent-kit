@@ -102,6 +102,25 @@ export async function initClients(
   return { driftClient, vaultClient, cleanUp };
 }
 
+export async function initDriftAccount(agent: SolanaAgentKit) {
+  const { driftClient, cleanUp } = await initClients(agent);
+  const result = await driftClient.initializeUserAccount(
+    undefined,
+    undefined,
+    {
+      referrer: new PublicKey("Ek8v5mjTPiizkTv3N9rByNfbbXDmyQLc7ACWDuUpARmv"),
+      referrerStats: new PublicKey(
+        "Ek8v5mjTPiizkTv3N9rByNfbbXDmyQLc7ACWDuUpARmv",
+      ),
+    },
+    undefined,
+  );
+  await cleanUp();
+  return {
+    signature: result[0],
+    userAccountPublicKey: result[1],
+  };
+}
 /**
  * Create a drift user account provided an amount
  * @param amount amount of the token to deposit

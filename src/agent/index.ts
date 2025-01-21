@@ -85,6 +85,7 @@ import {
   get_balance,
   get_balance_other,
   get_token_balance,
+  initDriftAccount,
   launchPumpFunToken,
   lendAsset,
   limitOrder,
@@ -821,6 +822,10 @@ export class SolanaAgentKit {
 
   async createDriftUserAccount(depositAmount: number, depositSymbol: string) {
     return await createDriftUserAccount(this, depositAmount, depositSymbol);
+  }
+
+  async initDriftUserAccount() {
+    return await initDriftAccount(this);
   }
 
   async createDriftVault(params: {
