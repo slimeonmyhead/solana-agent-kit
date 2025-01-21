@@ -25,6 +25,7 @@ import {
   PRICE_PRECISION,
   QUOTE_PRECISION,
   User,
+  WRAPPED_SOL_MINT,
   type IWallet,
 } from "@drift-labs/sdk";
 import type { SolanaAgentKit } from "../../agent";
@@ -102,25 +103,6 @@ export async function initClients(
   return { driftClient, vaultClient, cleanUp };
 }
 
-export async function initDriftAccount(agent: SolanaAgentKit) {
-  const { driftClient, cleanUp } = await initClients(agent);
-  const result = await driftClient.initializeUserAccount(
-    undefined,
-    undefined,
-    {
-      referrer: new PublicKey("Ek8v5mjTPiizkTv3N9rByNfbbXDmyQLc7ACWDuUpARmv"),
-      referrerStats: new PublicKey(
-        "Ek8v5mjTPiizkTv3N9rByNfbbXDmyQLc7ACWDuUpARmv",
-      ),
-    },
-    undefined,
-  );
-  await cleanUp();
-  return {
-    signature: result[0],
-    userAccountPublicKey: result[1],
-  };
-}
 /**
  * Create a drift user account provided an amount
  * @param amount amount of the token to deposit
@@ -217,12 +199,15 @@ export async function depositToDriftUserAccount(
     }
 
     const depositAmount = numberToSafeBN(amount, token.precision);
+    const isSolMarket = token.mint.equals(WRAPPED_SOL_MINT);
 
     const [depInstruction, latestBlockhash] = await Promise.all([
       driftClient.getDepositTxnIx(
         depositAmount,
         token.marketIndex,
-        getAssociatedTokenAddressSync(token.mint, publicKey),
+        isSolMarket
+          ? publicKey
+          : getAssociatedTokenAddressSync(token.mint, publicKey),
         undefined,
         isRepay,
       ),
@@ -234,6 +219,7 @@ export async function depositToDriftUserAccount(
         microLamports: MINIMUM_COMPUTE_PRICE_FOR_COMPLEX_ACTIONS,
       }),
     );
+    tx.feePayer = publicKey;
     tx.recentBlockhash = latestBlockhash.blockhash;
     const signedTx = await agent.wallet.signTransaction(tx);
     const txSignature = await driftClient.txSender.sendRawTransaction(
