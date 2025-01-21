@@ -261,6 +261,6 @@ export interface PriorityFeeResponse {
   method: string;
   params: Array<{
     transaction: string;
-    options: { priorityLevel: string };
+    options: { priorityLevel?: string; recommended?: boolean };
   }>;
 }
