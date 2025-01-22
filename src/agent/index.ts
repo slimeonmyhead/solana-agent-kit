@@ -70,6 +70,7 @@ import {
   getAvailableDriftSpotMarkets,
   getEntryQuoteOfPerpTrade,
   getHeliusWebhook,
+  getLendAndBorrowApys,
   getLendingAndBorrowAPY,
   getMainAllDomainsDomain,
   getOwnedAllDomains,
@@ -983,6 +984,10 @@ export class SolanaAgentKit {
 
   async getAllLendAndBorrowAPY() {
     return getAllLendAndBorrowAPY(this);
+  }
+
+  async getLendAndBorrowApys(symbols: string[]) {
+    return getLendAndBorrowApys(this, symbols);
   }
 
   async voltrDepositStrategy(

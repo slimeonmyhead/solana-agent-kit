@@ -1024,7 +1024,50 @@ export async function getAllLendAndBorrowAPY(agent: SolanaAgentKit) {
 
     await cleanUp();
 
-    return rates;
+    return await Promise.all(rates);
+  } catch (e) {
+    // @ts-expect-error - error message is a string
+    throw new Error(`Failed to get APYs: ${e.message}`);
+  }
+}
+
+/**
+ * Get the APY for lending and borrowing for a list of symbols
+ * @param agent
+ * @param symbols
+ */
+export async function getLendAndBorrowApys(
+  agent: SolanaAgentKit,
+  symbols: string[],
+) {
+  try {
+    const { driftClient, cleanUp } = await initClients(agent);
+    const rates = symbols.map((symbol) => {
+      const market = MainnetSpotMarkets.find(
+        (m) => m.symbol === symbol.toUpperCase(),
+      );
+
+      if (market) {
+        const marketAccount = driftClient.getSpotMarketAccount(
+          market.marketIndex,
+        );
+        if (marketAccount) {
+          const lendAPY = calculateDepositRate(marketAccount);
+          const borrowAPY = calculateInterestRate(marketAccount);
+          return {
+            market: market.symbol,
+            lendAPY: convertToNumber(lendAPY, PERCENTAGE_PRECISION) * 100, // convert to percentage
+            borrowAPY: convertToNumber(borrowAPY, PERCENTAGE_PRECISION) * 100, // convert to percentage
+          };
+        }
+        return;
+      }
+      return undefined;
+    });
+
+    await cleanUp();
+
+    return (await Promise.all(rates)).filter((v) => v !== undefined);
   } catch (e) {
     // @ts-expect-error - error message is a string
     throw new Error(`Failed to get APYs: ${e.message}`);
