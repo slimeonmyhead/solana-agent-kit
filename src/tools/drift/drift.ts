@@ -1014,7 +1014,7 @@ export async function getAllLendAndBorrowAPY(agent: SolanaAgentKit) {
         const lendAPY = calculateDepositRate(marketAccount);
         const borrowAPY = calculateInterestRate(marketAccount);
         return {
-          market: market.symbol,
+          symbol: market.symbol,
           lendAPY: convertToNumber(lendAPY, PERCENTAGE_PRECISION) * 100, // convert to percentage
           borrowAPY: convertToNumber(borrowAPY, PERCENTAGE_PRECISION) * 100, // convert to percentage
         };
@@ -1055,7 +1055,7 @@ export async function getLendAndBorrowApys(
           const lendAPY = calculateDepositRate(marketAccount);
           const borrowAPY = calculateInterestRate(marketAccount);
           return {
-            market: market.symbol,
+            symbol: market.symbol,
             lendAPY: convertToNumber(lendAPY, PERCENTAGE_PRECISION) * 100, // convert to percentage
             borrowAPY: convertToNumber(borrowAPY, PERCENTAGE_PRECISION) * 100, // convert to percentage
           };
