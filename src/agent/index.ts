@@ -63,6 +63,7 @@ import {
   flashCloseTrade,
   flashOpenTrade,
   getAllDomainsTLDs,
+  getAllLendAndBorrowAPY,
   getAllRegisteredAllDomains,
   getAssetsByOwner,
   getAvailableDriftPerpMarkets,
@@ -978,6 +979,10 @@ export class SolanaAgentKit {
   }
   async getLendAndBorrowAPY(symbol: string) {
     return getLendingAndBorrowAPY(this, symbol);
+  }
+
+  async getAllLendAndBorrowAPY() {
+    return getAllLendAndBorrowAPY(this);
   }
 
   async voltrDepositStrategy(

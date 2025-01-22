@@ -71,17 +71,6 @@ export async function initClients(
     txParams: {
       computeUnitsPrice: MINIMUM_COMPUTE_PRICE_FOR_COMPLEX_ACTIONS,
     },
-    txSender: new FastSingleTxSender({
-      connection: agent.connection,
-      wallet,
-      timeout: 30000,
-      blockhashRefreshInterval: 1000,
-      opts: {
-        commitment: agent.connection.commitment ?? "confirmed",
-        skipPreflight: false,
-        preflightCommitment: agent.connection.commitment ?? "confirmed",
-      },
-    }),
   });
   const vaultProgram = new anchor.Program(
     IDL,
@@ -1004,6 +993,38 @@ export async function getLendingAndBorrowAPY(
       lendingAPY: convertToNumber(lendAPY, PERCENTAGE_PRECISION) * 100, // convert to percentage
       borrowAPY: convertToNumber(borrowAPY, PERCENTAGE_PRECISION) * 100, // convert to percentage
     };
+  } catch (e) {
+    // @ts-expect-error - error message is a string
+    throw new Error(`Failed to get APYs: ${e.message}`);
+  }
+}
+
+/**
+ * Get the APY for lending and borrowing for all spot markets on drift protocol
+ * @param agent
+ */
+export async function getAllLendAndBorrowAPY(agent: SolanaAgentKit) {
+  try {
+    const { driftClient, cleanUp } = await initClients(agent);
+    const rates = MainnetSpotMarkets.map(async (market) => {
+      const marketAccount = driftClient.getSpotMarketAccount(
+        market.marketIndex,
+      );
+      if (marketAccount) {
+        const lendAPY = calculateDepositRate(marketAccount);
+        const borrowAPY = calculateInterestRate(marketAccount);
+        return {
+          market: market.symbol,
+          lendAPY: convertToNumber(lendAPY, PERCENTAGE_PRECISION) * 100, // convert to percentage
+          borrowAPY: convertToNumber(borrowAPY, PERCENTAGE_PRECISION) * 100, // convert to percentage
+        };
+      }
+      return;
+    });
+
+    await cleanUp();
+
+    return rates;
   } catch (e) {
     // @ts-expect-error - error message is a string
     throw new Error(`Failed to get APYs: ${e.message}`);
