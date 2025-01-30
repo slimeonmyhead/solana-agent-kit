@@ -1,14 +1,14 @@
-import { Connection, PublicKey } from "@solana/web3.js";
-import { SolanaAgentKit } from "../index";
-import { AnchorProvider, IdlAccounts, Program } from "@coral-xyz/anchor";
-import { Adrena, IDL as ADRENA_IDL } from "../idls/adrena";
-
-import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
+import { IDL as ADRENA_IDL, Adrena } from "../idls/adrena";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
-  createAssociatedTokenAccountInstruction,
   TOKEN_PROGRAM_ID,
+  createAssociatedTokenAccountInstruction,
 } from "@solana/spl-token";
+import { AnchorProvider, IdlAccounts, Program } from "@coral-xyz/anchor";
+import { Connection, PublicKey } from "@solana/web3.js";
+
+import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
+import { SolanaAgentKit } from "../index";
 import { TOKENS } from "../constants";
 
 export type AdrenaProgram = Program<Adrena>;
@@ -36,40 +36,41 @@ export default class AdrenaClient {
   );
 
   public static async load(agent: SolanaAgentKit): Promise<AdrenaClient> {
-    const program = new Program<Adrena>(
-      ADRENA_IDL,
-      AdrenaClient.programId,
-      new AnchorProvider(agent.connection, new NodeWallet(agent.wallet), {
-        commitment: "processed",
-        skipPreflight: true,
-      }),
-    );
+    throw new Error("Not implemented");
+    // const program = new Program<Adrena>(
+    //   ADRENA_IDL,
+    //   AdrenaClient.programId,
+    //   new AnchorProvider(agent.connection, new NodeWallet(agent.wallet), {
+    //     commitment: "processed",
+    //     skipPreflight: true,
+    //   }),
+    // );
 
-    const [cortex, mainPool] = await Promise.all([
-      program.account.cortex.fetch(AdrenaClient.cortex),
-      program.account.pool.fetch(AdrenaClient.mainPool),
-    ]);
+    // const [cortex, mainPool] = await Promise.all([
+    //   program.account.cortex.fetch(AdrenaClient.cortex),
+    //   program.account.pool.fetch(AdrenaClient.mainPool),
+    // ]);
 
-    const custodiesAddresses = mainPool.custodies.filter(
-      (custody) => !custody.equals(PublicKey.default),
-    );
+    // const custodiesAddresses = mainPool.custodies.filter(
+    //   (custody) => !custody.equals(PublicKey.default),
+    // );
 
-    const custodies =
-      await program.account.custody.fetchMultiple(custodiesAddresses);
+    // const custodies =
+    //   await program.account.custody.fetchMultiple(custodiesAddresses);
 
-    if (!custodies.length || custodies.some((c) => c === null)) {
-      throw new Error("Custodies not found");
-    }
+    // if (!custodies.length || custodies.some((c) => c === null)) {
+    //   throw new Error("Custodies not found");
+    // }
 
-    return new AdrenaClient(
-      program,
-      mainPool,
-      cortex,
-      (custodies as Custody[]).map((c, i) => ({
-        ...c,
-        pubkey: custodiesAddresses[i],
-      })),
-    );
+    // return new AdrenaClient(
+    //   program,
+    //   mainPool,
+    //   cortex,
+    //   (custodies as Custody[]).map((c, i) => ({
+    //     ...c,
+    //     pubkey: custodiesAddresses[i],
+    //   })),
+    // );
   }
 
   public static findCustodyAddress(mint: PublicKey): PublicKey {

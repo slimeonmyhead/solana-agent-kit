@@ -1,8 +1,8 @@
-import { registerDomainNameV2 } from "@bonfida/spl-name-service";
-import { Transaction } from "@solana/web3.js";
 import { SolanaAgentKit } from "../../agent";
-import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { TOKENS } from "../../constants";
+import { Transaction } from "@solana/web3.js";
+import { getAssociatedTokenAddressSync } from "@solana/spl-token";
+import { registerDomainNameV2 } from "@bonfida/spl-name-service";
 
 /**
  * Register a .sol domain name using Bonfida Name Service
@@ -47,9 +47,11 @@ export async function registerDomain(
     transaction.feePayer = agent.wallet_address;
 
     // Sign and send transaction
-    const signature = await agent.connection.sendTransaction(transaction, [
-      agent.wallet,
-    ]);
+    const signedTx = await agent.wallet.signTransaction(transaction);
+
+    const signature = await agent.connection.sendRawTransaction(
+      signedTx.serialize(),
+    );
 
     return signature;
   } catch (error: any) {

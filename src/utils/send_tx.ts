@@ -1,15 +1,19 @@
-import { SolanaAgentKit } from "../agent";
 import {
+  AddressLookupTableAccount,
+  Connection,
   Keypair,
   Signer,
+  Transaction,
   TransactionInstruction,
   TransactionMessage,
+  TransactionSignature,
   VersionedTransaction,
-  Transaction,
 } from "@solana/web3.js";
+
 import { ComputeBudgetProgram } from "@solana/web3.js";
-import bs58 from "bs58";
 import { PriorityFeeResponse } from "../types/index";
+import { SolanaAgentKit } from "../agent";
+import bs58 from "bs58";
 
 const feeTiers = {
   min: 0.01,
@@ -64,7 +68,7 @@ export async function getComputeBudgetInstructions(
     legacyTransaction.add(computeBudgetLimitInstruction, ...instructions);
 
     // Sign the transaction
-    legacyTransaction.sign(agent.wallet);
+    const signedTx = await agent.wallet.signTransaction(legacyTransaction);
 
     // Use Helius API for priority fee calculation
     const response = await fetch(
@@ -78,15 +82,8 @@ export async function getComputeBudgetInstructions(
           method: "getPriorityFeeEstimate",
           params: [
             {
-              transaction: bs58.encode(legacyTransaction.serialize()),
-              options: {
-                priorityLevel:
-                  feeTier === "min"
-                    ? "Min"
-                    : feeTier === "mid"
-                      ? "Medium"
-                      : "High",
-              },
+              transaction: bs58.encode(signedTx.serialize()),
+              options: { recommended: true },
             },
           ],
         } as PriorityFeeResponse),
@@ -97,7 +94,7 @@ export async function getComputeBudgetInstructions(
     if (data.error) {
       throw new Error("Error fetching priority fee from Helius API");
     }
-    priorityFee = data.result.priorityFeeEstimate;
+    priorityFee = Math.floor(data.result.priorityFeeEstimate * 1.2);
   } else {
     // Use default implementation for priority fee calculation
     priorityFee = await agent.connection
@@ -132,6 +129,7 @@ export async function sendTx(
   agent: SolanaAgentKit,
   instructions: TransactionInstruction[],
   otherKeypairs?: Keypair[],
+  lookupTables: AddressLookupTableAccount[] = [],
 ) {
   const ixComputeBudget = await getComputeBudgetInstructions(
     agent,
@@ -147,36 +145,64 @@ export async function sendTx(
     payerKey: agent.wallet_address,
     recentBlockhash: ixComputeBudget.blockhash,
     instructions: allInstructions,
-  }).compileToV0Message();
+  }).compileToV0Message(lookupTables);
   const transaction = new VersionedTransaction(messageV0);
-  transaction.sign([agent.wallet, ...(otherKeypairs ?? [])] as Signer[]);
+  const signedTx = await agent.wallet.signTransaction(transaction);
+  if (otherKeypairs) {
+    signedTx.sign(otherKeypairs);
+  }
 
-  const timeoutMs = 90000;
-  const startTime = Date.now();
-  while (Date.now() - startTime < timeoutMs) {
-    const transactionStartTime = Date.now();
+  try {
+    const timeout = 60000;
+    const startTime = Date.now();
+    let txtSig: TransactionSignature;
 
-    const signature = await agent.connection.sendTransaction(transaction, {
-      maxRetries: 0,
-      skipPreflight: false,
-    });
-
-    const statuses = await agent.connection.getSignatureStatuses([signature]);
-    if (statuses.value[0]) {
-      if (!statuses.value[0].err) {
-        return signature;
-      } else {
-        throw new Error(
-          `Transaction failed: ${statuses.value[0].err.toString()}`,
+    while (Date.now() - startTime < timeout) {
+      try {
+        txtSig = await agent.connection.sendRawTransaction(
+          signedTx.serialize(),
+          {
+            skipPreflight: true,
+          },
         );
+
+        return await pollTransactionConfirmation(txtSig, agent);
+      } catch (error) {
+        continue;
       }
     }
-
-    const elapsedTime = Date.now() - transactionStartTime;
-    const remainingTime = Math.max(0, 1000 - elapsedTime);
-    if (remainingTime > 0) {
-      await new Promise((resolve) => setTimeout(resolve, remainingTime));
-    }
+  } catch (error) {
+    throw new Error(`Error sending smart transaction: ${error}`);
   }
-  throw new Error("Transaction timeout");
+
+  throw new Error("Transaction confirmation timed out");
+}
+
+async function pollTransactionConfirmation(
+  txtSig: TransactionSignature,
+  agent: SolanaAgentKit,
+): Promise<TransactionSignature> {
+  // 4 second timeout
+  const timeout = 4000;
+  // 2 second retry interval
+  const interval = 2000;
+  let elapsed = 0;
+
+  return new Promise<TransactionSignature>((resolve, reject) => {
+    const intervalId = setInterval(async () => {
+      elapsed += interval;
+
+      if (elapsed >= timeout) {
+        clearInterval(intervalId);
+        reject(new Error(`Transaction ${txtSig}'s confirmation timed out`));
+      }
+
+      const status = await agent.connection.getSignatureStatuses([txtSig]);
+
+      if (status?.value[0]?.confirmationStatus === "confirmed") {
+        clearInterval(intervalId);
+        resolve(txtSig);
+      }
+    }, interval);
+  });
 }

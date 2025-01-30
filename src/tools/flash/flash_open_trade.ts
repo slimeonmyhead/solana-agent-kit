@@ -1,25 +1,26 @@
-import { ComputeBudgetProgram } from "@solana/web3.js";
-import {
-  PerpetualsClient,
-  OraclePrice,
-  PoolConfig,
-  Side,
-  CustodyAccount,
-  Custody,
-} from "flash-sdk";
-import { BN } from "@coral-xyz/anchor";
-import { SolanaAgentKit } from "../../index";
 import {
   ALL_TOKENS,
+  OPEN_POSITION_CU,
+  createPerpClient,
+  fetchOraclePrice,
+  getNftTradingAccountInfo,
+  get_flash_privilege,
   marketSdkInfo,
   marketTokenMap,
-  getNftTradingAccountInfo,
-  OPEN_POSITION_CU,
-  fetchOraclePrice,
-  createPerpClient,
-  get_flash_privilege,
 } from "../../utils/flashUtils";
+import {
+  Custody,
+  CustodyAccount,
+  OraclePrice,
+  PerpetualsClient,
+  PoolConfig,
+  Side,
+} from "flash-sdk";
+
+import { BN } from "@coral-xyz/anchor";
+import { ComputeBudgetProgram } from "@solana/web3.js";
 import { FlashTradeParams } from "../../types";
+import { SolanaAgentKit } from "../../index";
 
 /**
  * Opens a new position on Flash.Trade
@@ -31,138 +32,139 @@ export async function flashOpenTrade(
   agent: SolanaAgentKit,
   params: FlashTradeParams,
 ): Promise<string> {
-  try {
-    const { token, side, collateralUsd, leverage } = params;
+  throw new Error("Not implemented");
+  // try {
+  //   const { token, side, collateralUsd, leverage } = params;
 
-    // Get market ID from token and side using marketTokenMap
-    const tokenMarkets = marketTokenMap[token];
-    if (!tokenMarkets) {
-      throw new Error(`Token ${token} not supported for trading`);
-    }
+  //   // Get market ID from token and side using marketTokenMap
+  //   const tokenMarkets = marketTokenMap[token];
+  //   if (!tokenMarkets) {
+  //     throw new Error(`Token ${token} not supported for trading`);
+  //   }
 
-    const sideEntry = tokenMarkets[side];
-    if (!sideEntry) {
-      throw new Error(`${side} side not available for ${token}`);
-    }
+  //   const sideEntry = tokenMarkets[side];
+  //   if (!sideEntry) {
+  //     throw new Error(`${side} side not available for ${token}`);
+  //   }
 
-    const market = sideEntry.marketID;
+  //   const market = sideEntry.marketID;
 
-    // Validate market data using marketSdkInfo
-    const marketData = marketSdkInfo[market];
-    if (!marketData) {
-      throw new Error(`Invalid market configuration for ${token}/${side}`);
-    }
+  //   // Validate market data using marketSdkInfo
+  //   const marketData = marketSdkInfo[market];
+  //   if (!marketData) {
+  //     throw new Error(`Invalid market configuration for ${token}/${side}`);
+  //   }
 
-    // Get token information
-    const [targetSymbol, collateralSymbol] = marketData.tokenPair.split("/");
-    const targetToken = ALL_TOKENS.find((t) => t.symbol === targetSymbol);
-    const collateralToken = ALL_TOKENS.find(
-      (t) => t.symbol === collateralSymbol,
-    );
+  //   // Get token information
+  //   const [targetSymbol, collateralSymbol] = marketData.tokenPair.split("/");
+  //   const targetToken = ALL_TOKENS.find((t) => t.symbol === targetSymbol);
+  //   const collateralToken = ALL_TOKENS.find(
+  //     (t) => t.symbol === collateralSymbol,
+  //   );
 
-    if (!targetToken || !collateralToken) {
-      throw new Error(`Token not found for pair ${marketData.tokenPair}`);
-    }
+  //   if (!targetToken || !collateralToken) {
+  //     throw new Error(`Token not found for pair ${marketData.tokenPair}`);
+  //   }
 
-    // Fetch oracle prices
-    const [targetPrice, collateralPrice] = await Promise.all([
-      fetchOraclePrice(targetSymbol),
-      fetchOraclePrice(collateralSymbol),
-    ]);
+  //   // Fetch oracle prices
+  //   const [targetPrice, collateralPrice] = await Promise.all([
+  //     fetchOraclePrice(targetSymbol),
+  //     fetchOraclePrice(collateralSymbol),
+  //   ]);
 
-    // Initialize pool configuration and perpClient
-    const poolConfig = PoolConfig.fromIdsByName(
-      marketData.pool,
-      "mainnet-beta",
-    );
-    const perpClient = createPerpClient(agent.connection, agent.wallet);
+  //   // Initialize pool configuration and perpClient
+  //   const poolConfig = PoolConfig.fromIdsByName(
+  //     marketData.pool,
+  //     "mainnet-beta",
+  //   );
+  //   const perpClient = createPerpClient(agent.connection, agent.wallet);
 
-    // Calculate position parameters
-    const leverageBN = new BN(leverage);
-    const collateralTokenPrice = convertPriceToNumber(collateralPrice.price);
-    const collateralAmount = calculateCollateralAmount(
-      collateralUsd,
-      collateralTokenPrice,
-      collateralToken.decimals,
-    );
+  //   // Calculate position parameters
+  //   const leverageBN = new BN(leverage);
+  //   const collateralTokenPrice = convertPriceToNumber(collateralPrice.price);
+  //   const collateralAmount = calculateCollateralAmount(
+  //     collateralUsd,
+  //     collateralTokenPrice,
+  //     collateralToken.decimals,
+  //   );
 
-    // Get custody accounts
-    const { targetCustody, collateralCustody } = await fetchCustodyAccounts(
-      perpClient,
-      poolConfig,
-      targetSymbol,
-      collateralSymbol,
-    );
+  //   // Get custody accounts
+  //   const { targetCustody, collateralCustody } = await fetchCustodyAccounts(
+  //     perpClient,
+  //     poolConfig,
+  //     targetSymbol,
+  //     collateralSymbol,
+  //   );
 
-    // Calculate position size
-    const positionSize = calculatePositionSize(
-      perpClient,
-      collateralAmount,
-      leverageBN,
-      targetToken,
-      collateralToken,
-      side,
-      targetPrice.price,
-      collateralPrice.price,
-      targetCustody,
-      collateralCustody,
-    );
+  //   // Calculate position size
+  //   const positionSize = calculatePositionSize(
+  //     perpClient,
+  //     collateralAmount,
+  //     leverageBN,
+  //     targetToken,
+  //     collateralToken,
+  //     side,
+  //     targetPrice.price,
+  //     collateralPrice.price,
+  //     targetCustody,
+  //     collateralCustody,
+  //   );
 
-    // Get NFT trading account info
-    const tradingAccounts = await getNftTradingAccountInfo(
-      agent.wallet_address,
-      perpClient,
-      poolConfig,
-      collateralSymbol,
-    );
+  //   // Get NFT trading account info
+  //   const tradingAccounts = await getNftTradingAccountInfo(
+  //     agent.wallet_address,
+  //     perpClient,
+  //     poolConfig,
+  //     collateralSymbol,
+  //   );
 
-    if (
-      !tradingAccounts.nftTradingAccountPk ||
-      !tradingAccounts.nftReferralAccountPK
-    ) {
-      throw new Error("Required NFT trading accounts not found");
-    }
+  //   if (
+  //     !tradingAccounts.nftTradingAccountPk ||
+  //     !tradingAccounts.nftReferralAccountPK
+  //   ) {
+  //     throw new Error("Required NFT trading accounts not found");
+  //   }
 
-    // Prepare transaction
-    const slippageBps = new BN(1000);
-    const priceWithSlippage = perpClient.getPriceAfterSlippage(
-      true,
-      slippageBps,
-      targetPrice.price,
-      side === "long" ? Side.Long : Side.Short,
-    );
+  //   // Prepare transaction
+  //   const slippageBps = new BN(1000);
+  //   const priceWithSlippage = perpClient.getPriceAfterSlippage(
+  //     true,
+  //     slippageBps,
+  //     targetPrice.price,
+  //     side === "long" ? Side.Long : Side.Short,
+  //   );
 
-    // Build and send transaction
-    const { instructions, additionalSigners } = await perpClient.openPosition(
-      targetSymbol,
-      collateralSymbol,
-      priceWithSlippage,
-      collateralAmount,
-      positionSize,
-      side === "long" ? Side.Long : Side.Short,
-      poolConfig,
-      get_flash_privilege(agent),
-      tradingAccounts.nftTradingAccountPk,
-      tradingAccounts.nftReferralAccountPK,
-      tradingAccounts.nftOwnerRebateTokenAccountPk!,
-      false,
-    );
+  //   // Build and send transaction
+  //   const { instructions, additionalSigners } = await perpClient.openPosition(
+  //     targetSymbol,
+  //     collateralSymbol,
+  //     priceWithSlippage,
+  //     collateralAmount,
+  //     positionSize,
+  //     side === "long" ? Side.Long : Side.Short,
+  //     poolConfig,
+  //     get_flash_privilege(agent),
+  //     tradingAccounts.nftTradingAccountPk,
+  //     tradingAccounts.nftReferralAccountPK,
+  //     tradingAccounts.nftOwnerRebateTokenAccountPk!,
+  //     false,
+  //   );
 
-    const computeBudgetIx = ComputeBudgetProgram.setComputeUnitLimit({
-      units: OPEN_POSITION_CU,
-    });
+  //   const computeBudgetIx = ComputeBudgetProgram.setComputeUnitLimit({
+  //     units: OPEN_POSITION_CU,
+  //   });
 
-    return await perpClient.sendTransaction(
-      [computeBudgetIx, ...instructions],
-      {
-        additionalSigners: additionalSigners,
-        alts: perpClient.addressLookupTables,
-        prioritizationFee: 5000000,
-      },
-    );
-  } catch (error) {
-    throw new Error(`Flash trade failed: ${error}`);
-  }
+  //   return await perpClient.sendTransaction(
+  //     [computeBudgetIx, ...instructions],
+  //     {
+  //       additionalSigners: additionalSigners,
+  //       alts: perpClient.addressLookupTables,
+  //       prioritizationFee: 5000000,
+  //     },
+  //   );
+  // } catch (error) {
+  //   throw new Error(`Flash trade failed: ${error}`);
+  // }
 }
 
 // Helper functions

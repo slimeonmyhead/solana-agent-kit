@@ -5,22 +5,22 @@ import {
   TransactionMessage,
   VersionedTransaction,
 } from "@solana/web3.js";
-import { SolanaAgentKit } from "../../agent";
-import { Wallet } from "../../utils/keypair";
-import { Decimal } from "decimal.js";
 import {
+  NO_TOKEN_EXTENSION_CONTEXT,
   ORCA_WHIRLPOOL_PROGRAM_ID,
-  WhirlpoolContext,
   PriceMath,
+  TokenExtensionContextForPool,
+  WhirlpoolContext,
   buildWhirlpoolClient,
   increaseLiquidityQuoteByInputToken,
-  TokenExtensionContextForPool,
-  NO_TOKEN_EXTENSION_CONTEXT,
 } from "@orca-so/whirlpools-sdk";
 
-import { sendTx } from "../../utils/send_tx";
+import { Decimal } from "decimal.js";
 import { Percentage } from "@orca-so/common-sdk";
+import { SolanaAgentKit } from "../../agent";
 import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
+import { Wallet } from "../../utils/keypair";
+import { sendTx } from "../../utils/send_tx";
 
 /**
  * # Opens a Centered Liquidity Position in an Orca Whirlpool
@@ -69,7 +69,7 @@ export async function orcaOpenCenteredPositionWithLiquidity(
   inputAmount: Decimal,
 ): Promise<string> {
   try {
-    const wallet = new Wallet(agent.wallet);
+    const wallet = agent.getAnchorWallet();
     const ctx = WhirlpoolContext.from(
       agent.connection,
       wallet,

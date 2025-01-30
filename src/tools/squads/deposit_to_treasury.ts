@@ -1,13 +1,15 @@
-import { SolanaAgentKit } from "../../index";
-import { PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
-import { LAMPORTS_PER_SOL } from "@solana/web3.js";
-import {
-  getAssociatedTokenAddress,
-  createTransferInstruction,
-  getMint,
-  createAssociatedTokenAccountInstruction,
-} from "@solana/spl-token";
 import * as multisig from "@sqds/multisig";
+
+import { PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
+import {
+  createAssociatedTokenAccountInstruction,
+  createTransferInstruction,
+  getAssociatedTokenAddress,
+  getMint,
+} from "@solana/spl-token";
+
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { SolanaAgentKit } from "../../index";
 
 /**
  * Transfer SOL or SPL tokens to a multisig vault.
@@ -47,7 +49,9 @@ export async function multisig_deposit_to_treasury(
         }),
       );
 
-      tx = await agent.connection.sendTransaction(transaction, [agent.wallet]);
+      const signedTx = await agent.wallet.signTransaction(transaction);
+
+      tx = await agent.connection.sendRawTransaction(signedTx.serialize());
     } else {
       // Transfer SPL token
       const fromAta = await getAssociatedTokenAddress(
@@ -81,7 +85,9 @@ export async function multisig_deposit_to_treasury(
         ),
       );
 
-      tx = await agent.connection.sendTransaction(transaction, [agent.wallet]);
+      const signedTx = await agent.wallet.signTransaction(transaction);
+
+      tx = await agent.connection.sendRawTransaction(signedTx.serialize());
     }
 
     return tx;

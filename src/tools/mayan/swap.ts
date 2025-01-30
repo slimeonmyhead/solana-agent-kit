@@ -100,26 +100,15 @@ async function swapSolana(
     signAllTransactions: async <T extends Transaction | VersionedTransaction>(
       trxs: T[],
     ): Promise<T[]> => {
-      for (let i = 0; i < trxs.length; i++) {
-        if ("version" in trxs[i]) {
-          (trxs[i] as VersionedTransaction).sign([agent.wallet]);
-        } else {
-          (trxs[i] as Transaction).partialSign(agent.wallet);
-        }
-      }
-      return trxs;
+      const txs = await Promise.all(trxs.map(agent.wallet.signTransaction));
+      return await Promise.all(txs);
     },
   };
 
   const signer = async <T extends Transaction | VersionedTransaction>(
     trx: T,
   ): Promise<T> => {
-    if ("version" in trx) {
-      (trx as VersionedTransaction).sign([agent.wallet]);
-    } else {
-      (trx as Transaction).partialSign(agent.wallet);
-    }
-    return trx;
+    return await agent.wallet.signTransaction(trx);
   };
 
   const swapRes = await swapFromSolana(

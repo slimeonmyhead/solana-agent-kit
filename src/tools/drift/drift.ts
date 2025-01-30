@@ -28,6 +28,7 @@ import {
   PRICE_PRECISION,
   QUOTE_PRECISION,
   User,
+  WRAPPED_SOL_MINT,
   type IWallet,
 } from "@drift-labs/sdk";
 import type { SolanaAgentKit } from "../../agent";
@@ -50,16 +51,15 @@ export async function initClients(
 ) {
   const wallet: IWallet = {
     publicKey: agent.wallet.publicKey,
-    payer: agent.wallet,
     signAllTransactions: async (txs) => {
+      const signedTxs = [];
       for (const tx of txs) {
-        tx.sign(agent.wallet);
+        signedTxs.push(await agent.wallet.signTransaction(tx));
       }
-      return txs;
+      return signedTxs;
     },
     signTransaction: async (tx) => {
-      tx.sign(agent.wallet);
-      return tx;
+      return await agent.wallet.signTransaction(tx);
     },
   };
 
@@ -74,21 +74,6 @@ export async function initClients(
     txParams: {
       computeUnitsPrice: MINIMUM_COMPUTE_PRICE_FOR_COMPLEX_ACTIONS,
     },
-    accountSubscription: {
-      type: "polling",
-      accountLoader: new BulkAccountLoader(agent.connection, "processed", 10),
-    },
-    txSender: new FastSingleTxSender({
-      connection: agent.connection,
-      wallet,
-      timeout: 30000,
-      blockhashRefreshInterval: 1000,
-      opts: {
-        commitment: agent.connection.commitment ?? "confirmed",
-        skipPreflight: false,
-        preflightCommitment: agent.connection.commitment ?? "confirmed",
-      },
-    }),
   });
   const vaultProgram = new anchor.Program(
     IDL,
@@ -206,12 +191,15 @@ export async function depositToDriftUserAccount(
     }
 
     const depositAmount = numberToSafeBN(amount, token.precision);
+    const isSolMarket = token.mint.equals(WRAPPED_SOL_MINT);
 
     const [depInstruction, latestBlockhash] = await Promise.all([
       driftClient.getDepositTxnIx(
         depositAmount,
         token.marketIndex,
-        getAssociatedTokenAddressSync(token.mint, publicKey),
+        isSolMarket
+          ? publicKey
+          : getAssociatedTokenAddressSync(token.mint, publicKey),
         undefined,
         isRepay,
       ),
@@ -223,10 +211,11 @@ export async function depositToDriftUserAccount(
         microLamports: MINIMUM_COMPUTE_PRICE_FOR_COMPLEX_ACTIONS,
       }),
     );
+    tx.feePayer = publicKey;
     tx.recentBlockhash = latestBlockhash.blockhash;
-    tx.sign(agent.wallet);
+    const signedTx = await agent.wallet.signTransaction(tx);
     const txSignature = await driftClient.txSender.sendRawTransaction(
-      tx.serialize(),
+      signedTx.serialize(),
       { ...driftClient.opts },
     );
 
@@ -289,10 +278,10 @@ export async function withdrawFromDriftUserAccount(
       }),
     );
     tx.recentBlockhash = latestBlockhash.blockhash;
-    tx.sign(agent.wallet);
+    const signedTx = await agent.wallet.signTransaction(tx);
 
     const txSignature = await driftClient.txSender.sendRawTransaction(
-      tx.serialize(),
+      signedTx.serialize(),
       { ...driftClient.opts },
     );
 
@@ -1057,6 +1046,81 @@ export async function getLendingAndBorrowAPY(
       lendingAPY: convertToNumber(lendAPY, PERCENTAGE_PRECISION) * 100, // convert to percentage
       borrowAPY: convertToNumber(borrowAPY, PERCENTAGE_PRECISION) * 100, // convert to percentage
     };
+  } catch (e) {
+    // @ts-expect-error - error message is a string
+    throw new Error(`Failed to get APYs: ${e.message}`);
+  }
+}
+
+/**
+ * Get the APY for lending and borrowing for all spot markets on drift protocol
+ * @param agent
+ */
+export async function getAllLendAndBorrowAPY(agent: SolanaAgentKit) {
+  try {
+    const { driftClient, cleanUp } = await initClients(agent);
+    const rates = MainnetSpotMarkets.map(async (market) => {
+      const marketAccount = driftClient.getSpotMarketAccount(
+        market.marketIndex,
+      );
+      if (marketAccount) {
+        const lendAPY = calculateDepositRate(marketAccount);
+        const borrowAPY = calculateInterestRate(marketAccount);
+        return {
+          symbol: market.symbol,
+          lendAPY: convertToNumber(lendAPY, PERCENTAGE_PRECISION) * 100, // convert to percentage
+          borrowAPY: convertToNumber(borrowAPY, PERCENTAGE_PRECISION) * 100, // convert to percentage
+        };
+      }
+      return;
+    });
+
+    await cleanUp();
+
+    return await Promise.all(rates);
+  } catch (e) {
+    // @ts-expect-error - error message is a string
+    throw new Error(`Failed to get APYs: ${e.message}`);
+  }
+}
+
+/**
+ * Get the APY for lending and borrowing for a list of symbols
+ * @param agent
+ * @param symbols
+ */
+export async function getLendAndBorrowApys(
+  agent: SolanaAgentKit,
+  symbols: string[],
+) {
+  try {
+    const { driftClient, cleanUp } = await initClients(agent);
+    const rates = symbols.map((symbol) => {
+      const market = MainnetSpotMarkets.find(
+        (m) => m.symbol === symbol.toUpperCase(),
+      );
+
+      if (market) {
+        const marketAccount = driftClient.getSpotMarketAccount(
+          market.marketIndex,
+        );
+        if (marketAccount) {
+          const lendAPY = calculateDepositRate(marketAccount);
+          const borrowAPY = calculateInterestRate(marketAccount);
+          return {
+            symbol: market.symbol,
+            lendAPY: convertToNumber(lendAPY, PERCENTAGE_PRECISION) * 100, // convert to percentage
+            borrowAPY: convertToNumber(borrowAPY, PERCENTAGE_PRECISION) * 100, // convert to percentage
+          };
+        }
+        return;
+      }
+      return undefined;
+    });
+
+    await cleanUp();
+
+    return (await Promise.all(rates)).filter((v) => v !== undefined);
   } catch (e) {
     // @ts-expect-error - error message is a string
     throw new Error(`Failed to get APYs: ${e.message}`);

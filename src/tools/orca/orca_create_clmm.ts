@@ -4,18 +4,19 @@ import {
   TransactionMessage,
   VersionedTransaction,
 } from "@solana/web3.js";
-import { SolanaAgentKit } from "../../agent";
-import { Wallet } from "../../utils/keypair";
-import { Decimal } from "decimal.js";
 import {
   ORCA_WHIRLPOOL_PROGRAM_ID,
-  WhirlpoolContext,
-  PriceMath,
   PoolUtil,
+  PriceMath,
+  WhirlpoolContext,
   buildWhirlpoolClient,
 } from "@orca-so/whirlpools-sdk";
-import { sendTx } from "../../utils/send_tx";
+
+import { Decimal } from "decimal.js";
 import { FEE_TIERS } from "./orca_create_single_sided_liquidity_pool";
+import { SolanaAgentKit } from "../../agent";
+import { Wallet } from "../../utils/keypair";
+import { sendTx } from "../../utils/send_tx";
 
 /**
  * # Creates a CLMM Pool (Concentrated Liquidity Market Maker Pool).
@@ -68,7 +69,7 @@ export async function orcaCreateCLMM(
     } else {
       throw new Error("Unsupported network");
     }
-    const wallet = new Wallet(agent.wallet);
+    const wallet = agent.getAnchorWallet();
     const ctx = WhirlpoolContext.from(
       agent.connection,
       wallet,

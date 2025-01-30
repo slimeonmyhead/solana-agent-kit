@@ -1,7 +1,9 @@
+import { BaseWallet } from "./wallet";
 import { PublicKey } from "@solana/web3.js";
 import { SolanaAgentKit } from "../agent";
 import { z } from "zod";
 import { AlloraInference, AlloraTopic } from "@alloralabs/allora-sdk";
+export { BaseWallet };
 
 export interface Config {
   OPENAI_API_KEY?: string;
@@ -265,7 +267,7 @@ export interface PriorityFeeResponse {
   method: string;
   params: Array<{
     transaction: string;
-    options: { priorityLevel: string };
+    options: { priorityLevel?: string; recommended?: boolean };
   }>;
 }
 

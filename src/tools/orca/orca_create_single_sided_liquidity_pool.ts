@@ -1,42 +1,43 @@
 import {
+  IncreaseLiquidityQuoteParam,
+  NO_TOKEN_EXTENSION_CONTEXT,
+  ORCA_WHIRLPOOL_PROGRAM_ID,
+  PDAUtil,
+  PoolUtil,
+  PriceMath,
+  TickUtil,
+  TokenExtensionContextForPool,
+  TokenExtensionUtil,
+  WhirlpoolContext,
+  WhirlpoolIx,
+  increaseLiquidityQuoteByInputTokenWithParams,
+} from "@orca-so/whirlpools-sdk";
+import {
   Keypair,
   PublicKey,
   TransactionMessage,
   VersionedTransaction,
 } from "@solana/web3.js";
-import { SolanaAgentKit } from "../../agent";
-import { BN } from "@coral-xyz/anchor";
-import { Wallet } from "../../utils/keypair";
-import { Decimal } from "decimal.js";
-import {
-  PDAUtil,
-  ORCA_WHIRLPOOL_PROGRAM_ID,
-  WhirlpoolContext,
-  TickUtil,
-  PriceMath,
-  PoolUtil,
-  TokenExtensionContextForPool,
-  NO_TOKEN_EXTENSION_CONTEXT,
-  TokenExtensionUtil,
-  WhirlpoolIx,
-  IncreaseLiquidityQuoteParam,
-  increaseLiquidityQuoteByInputTokenWithParams,
-} from "@orca-so/whirlpools-sdk";
 import {
   Percentage,
-  resolveOrCreateATAs,
   TransactionBuilder,
+  resolveOrCreateATAs,
 } from "@orca-so/common-sdk";
+import {
+  TOKEN_2022_PROGRAM_ID,
+  getAssociatedTokenAddressSync,
+} from "@solana/spl-token";
 import {
   increaseLiquidityIx,
   increaseLiquidityV2Ix,
   initTickArrayIx,
   openPositionWithTokenExtensionsIx,
 } from "@orca-so/whirlpools-sdk/dist/instructions";
-import {
-  getAssociatedTokenAddressSync,
-  TOKEN_2022_PROGRAM_ID,
-} from "@solana/spl-token";
+
+import { BN } from "@coral-xyz/anchor";
+import { Decimal } from "decimal.js";
+import { SolanaAgentKit } from "../../agent";
+import { Wallet } from "../../utils/keypair";
 import { sendTx } from "../../utils/send_tx";
 
 /**
@@ -124,7 +125,7 @@ export async function orcaCreateSingleSidedLiquidityPool(
     } else {
       throw new Error("Unsupported network");
     }
-    const wallet = new Wallet(agent.wallet);
+    const wallet = agent.getAnchorWallet();
     const ctx = WhirlpoolContext.from(
       agent.connection,
       wallet,

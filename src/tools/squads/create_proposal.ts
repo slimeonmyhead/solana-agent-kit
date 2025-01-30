@@ -1,5 +1,6 @@
-import { SolanaAgentKit } from "../../index";
 import * as multisig from "@sqds/multisig";
+
+import { SolanaAgentKit } from "../../index";
 const { Multisig } = multisig.accounts;
 
 /**
@@ -37,9 +38,8 @@ export async function multisig_create_proposal(
       creator: agent.wallet_address,
     });
 
-    multisigTx.sign([agent.wallet]);
     const tx = await agent.connection.sendRawTransaction(
-      multisigTx.serialize(),
+      (await agent.wallet.signTransaction(multisigTx)).serialize(),
     );
     return tx;
   } catch (error: any) {

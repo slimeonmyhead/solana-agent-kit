@@ -1,19 +1,20 @@
-import { TipLink } from "@tiplink/api";
 import {
-  Transaction,
-  SystemProgram,
-  LAMPORTS_PER_SOL,
-  sendAndConfirmTransaction,
-  PublicKey,
   ComputeBudgetProgram,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  SystemProgram,
+  Transaction,
+  sendAndConfirmTransaction,
 } from "@solana/web3.js";
 import {
-  getAssociatedTokenAddress,
-  createTransferInstruction,
-  getMint,
   createAssociatedTokenAccountInstruction,
+  createTransferInstruction,
+  getAssociatedTokenAddress,
+  getMint,
 } from "@solana/spl-token";
+
 import { SolanaAgentKit } from "../../index";
+import { TipLink } from "@tiplink/api";
 
 const MINIMUM_SOL_BALANCE = 0.003 * LAMPORTS_PER_SOL;
 
@@ -34,13 +35,11 @@ export async function create_TipLink(
           lamports: amount * LAMPORTS_PER_SOL,
         }),
       );
-
-      const signature = await sendAndConfirmTransaction(
-        agent.connection,
-        transaction,
-        [agent.wallet],
-        { commitment: "confirmed" },
+      const signedTx = await agent.wallet.signTransaction(transaction);
+      const signature = await agent.connection.sendRawTransaction(
+        signedTx.serialize(),
       );
+      await agent.connection.confirmTransaction(signature, "confirmed");
 
       return {
         url: tiplink.url.toString(),
@@ -93,12 +92,12 @@ export async function create_TipLink(
         ),
       );
 
-      const signature = await sendAndConfirmTransaction(
-        agent.connection,
-        transaction,
-        [agent.wallet],
-        { commitment: "confirmed" },
+      const signedTx = await agent.wallet.signTransaction(transaction);
+
+      const signature = await agent.connection.sendRawTransaction(
+        signedTx.serialize(),
       );
+      await agent.connection.confirmTransaction(signature, "confirmed");
 
       return {
         url: tiplink.url.toString(),

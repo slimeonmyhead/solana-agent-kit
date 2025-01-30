@@ -1,12 +1,13 @@
-import { TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
-import { SolanaAgentKit } from "../../agent";
 import {
   PublicKey,
-  sendAndConfirmTransaction,
   Transaction,
+  sendAndConfirmTransaction,
 } from "@solana/web3.js";
-import { VoltrClient } from "@voltr/vault-sdk";
+import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+
 import BN from "bn.js";
+import { SolanaAgentKit } from "../../agent";
+import { VoltrClient } from "@voltr/vault-sdk";
 
 /**
  * Deposits assets into a Voltr strategy
@@ -22,7 +23,7 @@ export async function voltrDepositStrategy(
   vault: PublicKey,
   strategy: PublicKey,
 ): Promise<string> {
-  const vc = new VoltrClient(agent.connection, agent.wallet);
+  const vc = new VoltrClient(agent.connection);
   const vaultAccount = await vc.fetchVaultAccount(vault);
   const vaultAssetMint = vaultAccount.asset.mint;
   const assetTokenProgram = await agent.connection
@@ -92,8 +93,16 @@ export async function voltrDepositStrategy(
   const transaction = new Transaction();
   transaction.add(depositIx);
 
-  const txSig = await sendAndConfirmTransaction(agent.connection, transaction, [
-    agent.wallet,
-  ]);
+  const signedTx = await agent.wallet.signTransaction(transaction);
+
+  const txSig = await agent.connection.sendRawTransaction(
+    signedTx.serialize(),
+    {
+      skipPreflight: true,
+      maxRetries: 3,
+    },
+  );
+
+  await agent.connection.confirmTransaction(txSig);
   return txSig;
 }

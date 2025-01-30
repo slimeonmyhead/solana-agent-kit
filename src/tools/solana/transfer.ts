@@ -1,11 +1,15 @@
-import { SolanaAgentKit } from "../../index";
 import { PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
-import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import {
-  getAssociatedTokenAddress,
+  createAssociatedTokenAccountInstruction,
   createTransferInstruction,
+  getAccount,
+  getAssociatedTokenAddress,
   getMint,
 } from "@solana/spl-token";
+
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { SolanaAgentKit } from "../../index";
+import { sendTx } from "../../utils/send_tx";
 
 /**
  * Transfer SOL or SPL tokens to a recipient
@@ -34,20 +38,33 @@ export async function transfer(
         }),
       );
 
-      tx = await agent.connection.sendTransaction(transaction, [agent.wallet]);
+      tx = await sendTx(agent, transaction.instructions);
     } else {
+      const transaction = new Transaction();
       // Transfer SPL token
       const fromAta = await getAssociatedTokenAddress(
         mint,
         agent.wallet_address,
       );
       const toAta = await getAssociatedTokenAddress(mint, to);
+      try {
+        const toAtaAcc = await getAccount(agent.connection, toAta);
+      } catch {
+        transaction.add(
+          createAssociatedTokenAccountInstruction(
+            agent.wallet_address,
+            toAta,
+            to,
+            mint,
+          ),
+        );
+      }
 
       // Get mint info to determine decimals
       const mintInfo = await getMint(agent.connection, mint);
       const adjustedAmount = amount * Math.pow(10, mintInfo.decimals);
 
-      const transaction = new Transaction().add(
+      transaction.add(
         createTransferInstruction(
           fromAta,
           toAta,
@@ -56,7 +73,7 @@ export async function transfer(
         ),
       );
 
-      tx = await agent.connection.sendTransaction(transaction, [agent.wallet]);
+      tx = await sendTx(agent, transaction.instructions);
     }
 
     return tx;

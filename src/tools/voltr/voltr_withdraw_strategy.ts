@@ -1,11 +1,12 @@
-import { SolanaAgentKit } from "../../agent";
 import {
   PublicKey,
-  sendAndConfirmTransaction,
   Transaction,
+  sendAndConfirmTransaction,
 } from "@solana/web3.js";
-import BN from "bn.js";
 import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+
+import BN from "bn.js";
+import { SolanaAgentKit } from "../../agent";
 import { VoltrClient } from "@voltr/vault-sdk";
 
 /**
@@ -22,7 +23,7 @@ export async function voltrWithdrawStrategy(
   vault: PublicKey,
   strategy: PublicKey,
 ): Promise<string> {
-  const vc = new VoltrClient(agent.connection, agent.wallet);
+  const vc = new VoltrClient(agent.connection);
   const vaultAccount = await vc.fetchVaultAccount(vault);
   const vaultAssetMint = vaultAccount.asset.mint;
   const assetTokenProgram = await agent.connection
@@ -92,8 +93,21 @@ export async function voltrWithdrawStrategy(
   const transaction = new Transaction();
   transaction.add(withdrawIx);
 
-  const txSig = await sendAndConfirmTransaction(agent.connection, transaction, [
-    agent.wallet,
-  ]);
+  const signedTx = await agent.wallet.signTransaction(transaction);
+  const txSig = await agent.connection.sendRawTransaction(
+    signedTx.serialize(),
+    {
+      skipPreflight: true,
+      maxRetries: 3,
+    },
+  );
+
+  const latestBlockhash = await agent.connection.getLatestBlockhash();
+  await agent.connection.confirmTransaction({
+    signature: txSig,
+    blockhash: latestBlockhash.blockhash,
+    lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+  });
+
   return txSig;
 }

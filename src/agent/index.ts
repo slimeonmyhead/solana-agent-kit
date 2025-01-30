@@ -1,7 +1,21 @@
+import { BN, Wallet } from "@coral-xyz/anchor";
+import {
+  CollectionDeployment,
+  CollectionOptions,
+  Config,
+  FlashCloseTradeParams,
+  FlashTradeParams,
+  GibworkCreateTaskReponse,
+  HeliusWebhookIdResponse,
+  HeliusWebhookResponse,
+  JupiterTokenData,
+  MintCollectionNFTResponse,
+  OrderParams,
+  PumpFunTokenOptions,
+  PumpfunLaunchResponse,
+  TokenCheck,
+} from "../types";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
-import { BN } from "@coral-xyz/anchor";
-import bs58 from "bs58";
-import Decimal from "decimal.js";
 import {
   CreateCollectionOptions,
   CreateSingleOptions,
@@ -122,23 +136,9 @@ import {
   getPriceInference,
   getAllTopics,
   getInferenceByTopicId,
+  getAllLendAndBorrowAPY,
+  getLendAndBorrowApys,
 } from "../tools";
-import {
-  Config,
-  TokenCheck,
-  CollectionDeployment,
-  CollectionOptions,
-  GibworkCreateTaskReponse,
-  JupiterTokenData,
-  MintCollectionNFTResponse,
-  PumpfunLaunchResponse,
-  PumpFunTokenOptions,
-  OrderParams,
-  FlashTradeParams,
-  FlashCloseTradeParams,
-  HeliusWebhookIdResponse,
-  HeliusWebhookResponse,
-} from "../types";
 import {
   DasApiAsset,
   DasApiAssetList,
@@ -147,54 +147,41 @@ import {
   SearchAssetsRpcInput,
 } from "@metaplex-foundation/digital-asset-standard-api";
 import { AlloraInference, AlloraTopic } from "@alloralabs/allora-sdk";
-
+import { BaseWallet } from "../types/wallet";
+import Decimal from "decimal.js";
 /**
  * Main class for interacting with Solana blockchain
  * Provides a unified interface for token operations, NFT management, trading and more
  *
  * @class SolanaAgentKit
  * @property {Connection} connection - Solana RPC connection
- * @property {Keypair} wallet - Wallet keypair for signing transactions
+ * @property {BaseWallet} wallet - wallet for signing transactions
  * @property {PublicKey} wallet_address - Public key of the wallet
  * @property {Config} config - Configuration object
  */
 export class SolanaAgentKit {
   public connection: Connection;
-  public wallet: Keypair;
+  public wallet: BaseWallet;
   public wallet_address: PublicKey;
   public config: Config;
 
-  /**
-   * @deprecated Using openai_api_key directly in constructor is deprecated.
-   * Please use the new constructor with Config object instead:
-   * @example
-   * const agent = new SolanaAgentKit(privateKey, rpcUrl, {
-   *   OPENAI_API_KEY: 'your-key'
-   * });
-   */
-  constructor(
-    private_key: string,
-    rpc_url: string,
-    openai_api_key: string | null,
-  );
-  constructor(private_key: string, rpc_url: string, config: Config);
-  constructor(
-    private_key: string,
-    rpc_url: string,
-    configOrKey: Config | string | null,
-  ) {
+  constructor(wallet: BaseWallet, rpc_url: string, config: Config) {
     this.connection = new Connection(
       rpc_url || "https://api.mainnet-beta.solana.com",
     );
-    this.wallet = Keypair.fromSecretKey(bs58.decode(private_key));
+    this.wallet = wallet;
     this.wallet_address = this.wallet.publicKey;
+    this.config = config;
+  }
 
-    // Handle both old and new patterns
-    if (typeof configOrKey === "string" || configOrKey === null) {
-      this.config = { OPENAI_API_KEY: configOrKey || "" };
-    } else {
-      this.config = configOrKey;
-    }
+  getAnchorWallet(): Wallet {
+    const adapter = this.wallet;
+    return {
+      publicKey: adapter.publicKey,
+      signTransaction: adapter.signTransaction.bind(adapter),
+      signAllTransactions: adapter.signAllTransactions.bind(adapter),
+      payer: adapter as any,
+    };
   }
 
   // Tool methods
@@ -726,21 +713,18 @@ export class SolanaAgentKit {
     isDevnet: boolean = false,
     priorityFeeParam?: number,
   ): Promise<string> {
-    const optionsWithBase58: StoreInitOptions = {
-      privateKey: this.wallet.secretKey,
-    };
-    if (isDevnet) {
-      optionsWithBase58.isMainnet = false;
-    } else {
-      optionsWithBase58.isMainnet = true;
-    }
+    throw new Error("Not implemented");
+    // const optionsWithBase58: StoreInitOptions = {
+    //   privateKey: this.wallet.secretKey,
+    // };
+    // if (isDevnet) {
+    //   optionsWithBase58.isMainnet = false;
+    // } else {
+    //   optionsWithBase58.isMainnet = true;
+    // }
 
-    const tx = await createCollection(
-      optionsWithBase58,
-      collectionOpts,
-      priorityFeeParam,
-    );
-    return `Transaction: ${tx}`;
+    // const tx = await createCollection(optionsWithBase58, collectionOpts);
+    // return `Transaction: ${tx}`;
   }
 
   async create3LandNft(
@@ -750,24 +734,24 @@ export class SolanaAgentKit {
     withPool: boolean = false,
     priorityFeeParam?: number,
   ): Promise<string> {
-    const optionsWithBase58: StoreInitOptions = {
-      privateKey: this.wallet.secretKey,
-    };
-    if (isDevnet) {
-      optionsWithBase58.isMainnet = false;
-    } else {
-      optionsWithBase58.isMainnet = true;
-    }
+    throw new Error("Not implemented");
+    // const optionsWithBase58: StoreInitOptions = {
+    //   privateKey: this.wallet.secretKey,
+    // };
+    // if (isDevnet) {
+    //   optionsWithBase58.isMainnet = false;
+    // } else {
+    //   optionsWithBase58.isMainnet = true;
+    // }
 
-    const tx = await createSingle(
-      optionsWithBase58,
-      collectionAccount,
-      createItemOptions,
-      !isDevnet,
-      withPool,
-      priorityFeeParam,
-    );
-    return `Transaction: ${tx}`;
+    // const tx = await createSingle(
+    //   optionsWithBase58,
+    //   collectionAccount,
+    //   createItemOptions,
+    //   !isDevnet,
+    //   withPool,
+    // );
+    // return `Transaction: ${tx}`;
   }
   async sendTranctionWithPriority(
     priorityLevel: string,
@@ -1000,6 +984,14 @@ export class SolanaAgentKit {
   }
   async getLendAndBorrowAPY(symbol: string) {
     return getLendingAndBorrowAPY(this, symbol);
+  }
+
+  async getAllLendAndBorrowAPY() {
+    return getAllLendAndBorrowAPY(this);
+  }
+
+  async getLendAndBorrowApys(symbols: string[]) {
+    return getLendAndBorrowApys(this, symbols);
   }
 
   async voltrDepositStrategy(

@@ -3,10 +3,11 @@ import {
   Raydium,
   TxVersion,
 } from "@raydium-io/raydium-sdk-v2";
-import { MintLayout } from "@solana/spl-token";
-import { PublicKey } from "@solana/web3.js";
+
 import BN from "bn.js";
 import Decimal from "decimal.js";
+import { MintLayout } from "@solana/spl-token";
+import { PublicKey } from "@solana/web3.js";
 import { SolanaAgentKit } from "../../index";
 
 export async function raydiumCreateClmm(
@@ -18,7 +19,7 @@ export async function raydiumCreateClmm(
   startTime: BN,
 ): Promise<string> {
   const raydium = await Raydium.load({
-    owner: agent.wallet,
+    owner: agent.wallet.publicKey,
     connection: agent.connection,
   });
 

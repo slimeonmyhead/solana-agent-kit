@@ -1,5 +1,5 @@
-import { VersionedTransaction } from "@solana/web3.js";
 import { SolanaAgentKit } from "../../index";
+import { VersionedTransaction } from "@solana/web3.js";
 
 /**
  * Stake SOL with Jup validator
@@ -35,8 +35,8 @@ export async function stakeWithJup(
     txn.message.recentBlockhash = blockhash;
 
     // Sign and send transaction
-    txn.sign([agent.wallet]);
-    const signature = await agent.connection.sendTransaction(txn, {
+    const signedTx = await agent.wallet.signTransaction(txn);
+    const signature = await agent.connection.sendTransaction(signedTx, {
       preflightCommitment: "confirmed",
       maxRetries: 3,
     });

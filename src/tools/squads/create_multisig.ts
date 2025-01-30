@@ -1,4 +1,5 @@
 import * as multisig from "@sqds/multisig";
+
 import { PublicKey } from "@solana/web3.js";
 import { SolanaAgentKit } from "../../index";
 
@@ -53,9 +54,9 @@ export async function create_squads_multisig(
     ],
   });
 
-  tx.sign([agent.wallet, createKey]);
+  const signedTx = await agent.wallet.signTransaction(tx);
 
-  const txId = connection.sendRawTransaction(tx.serialize());
+  const txId = connection.sendRawTransaction(signedTx.serialize());
 
   return txId;
 }
