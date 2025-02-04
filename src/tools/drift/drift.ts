@@ -9,6 +9,7 @@ import {
   convertToNumber,
   DRIFT_PROGRAM_ID,
   DriftClient,
+  fetchUserStatsAccount,
   FastSingleTxSender,
   FUNDING_RATE_BUFFER_PRECISION,
   FUNDING_RATE_PRECISION_EXP,
@@ -34,7 +35,7 @@ import {
 import type { SolanaAgentKit } from "../../agent";
 import * as anchor from "@coral-xyz/anchor";
 import { IDL, VAULT_PROGRAM_ID, VaultClient } from "@drift-labs/vaults-sdk";
-import { getAssociatedTokenAddressSync } from "@solana/spl-token";
+import { getAssociatedTokenAddressSync, getAccount } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { Transaction } from "@solana/web3.js";
 import { ComputeBudgetProgram } from "@solana/web3.js";
@@ -95,6 +96,24 @@ export async function initClients(
   return { driftClient, vaultClient, cleanUp };
 }
 
+async function getNextSubAccountId(
+  agent: SolanaAgentKit,
+  driftClient: DriftClient,
+) {
+  const userStats = driftClient.getUserStats();
+  if (!userStats) {
+    return (
+      await fetchUserStatsAccount(
+        agent.connection,
+        driftClient.program,
+        agent.wallet.publicKey,
+      )
+    )?.numberOfSubAccountsCreated;
+  } else {
+    return userStats.getAccount().numberOfSubAccountsCreated;
+  }
+}
+
 /**
  * Create a drift user account provided an amount
  * @param amount amount of the token to deposit
@@ -127,11 +146,26 @@ export async function createDriftUserAccount(
     }
 
     if (!userAccountExists) {
+      const nextSubAccountId = await getNextSubAccountId(agent, driftClient);
       const depositAmount = numberToSafeBN(amount, token.precision);
+
+      let tokenAccount = getAssociatedTokenAddressSync(
+        token.mint,
+        agent.wallet.publicKey,
+      );
+      if (token.mint.toBase58() === WRAPPED_SOL_MINT.toBase58()) {
+        try {
+          await getAccount(agent.connection, tokenAccount);
+        } catch {
+          tokenAccount = agent.wallet.publicKey;
+        }
+      }
       const [txSignature, account] =
         await driftClient.initializeUserAccountAndDepositCollateral(
           depositAmount,
-          getAssociatedTokenAddressSync(token.mint, agent.wallet.publicKey),
+          tokenAccount,
+          token.marketIndex,
+          nextSubAccountId,
         );
 
       await cleanUp();
