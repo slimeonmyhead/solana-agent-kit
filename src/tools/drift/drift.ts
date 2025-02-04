@@ -472,6 +472,7 @@ export async function driftUserAccountInfo(agent: SolanaAgentKit) {
     const userPublicKey = getUserAccountPublicKeySync(
       new PublicKey(DRIFT_PROGRAM_ID),
       agent.wallet.publicKey,
+      ((await getNextSubAccountId(agent, driftClient)) ?? 1) - 1,
     );
 
     const user = new User({
