@@ -234,7 +234,7 @@ export async function depositToDriftUserAccount(
         isSolMarket
           ? publicKey
           : getAssociatedTokenAddressSync(token.mint, publicKey),
-        undefined,
+        ((await getNextSubAccountId(agent, driftClient)) ?? 1) - 1,
         isRepay,
       ),
       driftClient.connection.getLatestBlockhash(),
