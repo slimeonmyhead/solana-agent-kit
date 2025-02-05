@@ -938,6 +938,15 @@ export class SolanaAgentKit {
         };
     }
   }
+
+  getAvailableDriftSpotMarkets() {
+    return getAvailableDriftSpotMarkets();
+  }
+
+  getAvailableDriftPerpMarkets() {
+    return getAvailableDriftPerpMarkets();
+  }
+
   async stakeToDriftInsuranceFund(amount: number, symbol: string) {
     return await stakeToDriftInsuranceFund(this, amount, symbol);
   }
