@@ -15,7 +15,12 @@ import {
   PumpfunLaunchResponse,
   TokenCheck,
 } from "../types";
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
+import {
+  Connection,
+  Keypair,
+  PublicKey,
+  VersionedMessage,
+} from "@solana/web3.js";
 import {
   CreateCollectionOptions,
   CreateSingleOptions,
@@ -150,6 +155,12 @@ import { AlloraInference, AlloraTopic } from "@alloralabs/allora-sdk";
 import { BaseWallet } from "../types/wallet";
 import Decimal from "decimal.js";
 import { Signer, Transaction } from "@metaplex-foundation/umi";
+import {
+  fromWeb3JsLegacyTransaction,
+  fromWeb3JsTransaction,
+  toWeb3JsTransaction,
+} from "@metaplex-foundation/umi-web3js-adapters";
+import { isVersionedTransaction } from "../wallet/KeypairWallet";
 /**
  * Main class for interacting with Solana blockchain
  * Provides a unified interface for token operations, NFT management, trading and more
@@ -189,11 +200,18 @@ export class SolanaAgentKit {
     const adapter = this.wallet;
     return {
       publicKey: adapter.publicKey.toBase58() as any,
-      signTransaction: (transaction: Transaction) => {
-        return adapter.signTransaction(transaction as any);
+      signTransaction: async (transaction: Transaction) => {
+        return fromWeb3JsTransaction(
+          await adapter.signTransaction(toWeb3JsTransaction(transaction)),
+        );
       },
-      signAllTransactions: (transactions: Transaction[]) => {
-        return adapter.signAllTransactions(transactions as any) as Promise<any>;
+      signAllTransactions: async (transactions) => {
+        const txs = transactions.map(toWeb3JsTransaction);
+        return (await adapter.signAllTransactions(txs)).map((tx) =>
+          isVersionedTransaction(tx)
+            ? fromWeb3JsTransaction(tx)
+            : fromWeb3JsLegacyTransaction(tx),
+        );
       },
       signMessage: (message: Uint8Array) => {
         return adapter.signMessage(message);
