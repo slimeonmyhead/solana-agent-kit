@@ -1,10 +1,9 @@
 import { create, mplCore } from "@metaplex-foundation/mpl-core";
 import {
-  fromWeb3JsKeypair,
   fromWeb3JsPublicKey,
   toWeb3JsPublicKey,
 } from "@metaplex-foundation/umi-web3js-adapters";
-import { generateSigner, keypairIdentity } from "@metaplex-foundation/umi";
+import { generateSigner, signerIdentity } from "@metaplex-foundation/umi";
 
 import { MintCollectionNFTResponse } from "../../types";
 import { PublicKey } from "@solana/web3.js";
@@ -34,36 +33,35 @@ export async function mintCollectionNFT(
   },
   recipient?: PublicKey,
 ): Promise<MintCollectionNFTResponse> {
-  throw new Error("Not implemented");
-  // try {
-  //   // Create UMI instance from agent
-  //   const umi = createUmi(agent.connection.rpcEndpoint).use(mplCore());
-  //   umi.use(keypairIdentity(fromWeb3JsKeypair(agent.wallet)));
+  try {
+    // Create UMI instance from agent
+    const umi = createUmi(agent.connection.rpcEndpoint).use(mplCore());
+    umi.use(signerIdentity(agent.getUmiSigner()));
 
-  //   // Convert collection mint to UMI format
-  //   const umiCollectionMint = fromWeb3JsPublicKey(collectionMint);
+    // Convert collection mint to UMI format
+    const umiCollectionMint = fromWeb3JsPublicKey(collectionMint);
 
-  //   // Fetch the existing collection
-  //   const collection = await fetchCollection(umi, umiCollectionMint);
+    // Fetch the existing collection
+    const collection = await fetchCollection(umi, umiCollectionMint);
 
-  //   // Generate a new signer for the NFT
-  //   const assetSigner = generateSigner(umi);
+    // Generate a new signer for the NFT
+    const assetSigner = generateSigner(umi);
 
-  //   // Create the NFT in the collection
-  //   await create(umi, {
-  //     asset: assetSigner,
-  //     collection: collection,
-  //     name: metadata.name,
-  //     uri: metadata.uri,
-  //     owner: fromWeb3JsPublicKey(recipient ?? agent.wallet.publicKey),
-  //   }).sendAndConfirm(umi);
+    // Create the NFT in the collection
+    await create(umi, {
+      asset: assetSigner,
+      collection: collection,
+      name: metadata.name,
+      uri: metadata.uri,
+      owner: fromWeb3JsPublicKey(recipient ?? agent.wallet.publicKey),
+    }).sendAndConfirm(umi);
 
-  //   return {
-  //     mint: toWeb3JsPublicKey(assetSigner.publicKey),
-  //     // Note: Token account is now handled automatically by the create instruction
-  //     metadata: toWeb3JsPublicKey(assetSigner.publicKey),
-  //   };
-  // } catch (error: any) {
-  //   throw new Error(`Collection NFT minting failed: ${error.message}`);
-  // }
+    return {
+      mint: toWeb3JsPublicKey(assetSigner.publicKey),
+      // Note: Token account is now handled automatically by the create instruction
+      metadata: toWeb3JsPublicKey(assetSigner.publicKey),
+    };
+  } catch (error: any) {
+    throw new Error(`Collection NFT minting failed: ${error.message}`);
+  }
 }

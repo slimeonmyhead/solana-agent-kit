@@ -8,7 +8,7 @@ import {
   fromWeb3JsPublicKey,
   toWeb3JsPublicKey,
 } from "@metaplex-foundation/umi-web3js-adapters";
-import { generateSigner, keypairIdentity } from "@metaplex-foundation/umi";
+import { generateSigner, signerIdentity } from "@metaplex-foundation/umi";
 
 import { PublicKey } from "@solana/web3.js";
 import { SolanaAgentKit } from "../../index";
@@ -33,45 +33,45 @@ export async function deploy_token(
   decimals: number = 9,
   initialSupply?: number,
 ): Promise<{ mint: PublicKey }> {
-  throw new Error("Not implemented");
-  // try {
-  //   // Create UMI instance from agent
-  //   const umi = createUmi(agent.connection.rpcEndpoint).use(mplToolbox());
-  //   umi.use(keypairIdentity(fromWeb3JsKeypair(agent.wallet)));
+  try {
+    // Create UMI instance from agent
+    const umi = createUmi(agent.connection.rpcEndpoint).use(mplToolbox());
 
-  //   // Create new token mint
-  //   const mint = generateSigner(umi);
+    umi.use(signerIdentity(agent.getUmiSigner()));
 
-  //   let builder = createFungible(umi, {
-  //     name,
-  //     uri,
-  //     symbol,
-  //     sellerFeeBasisPoints: {
-  //       basisPoints: 0n,
-  //       identifier: "%",
-  //       decimals: 2,
-  //     },
-  //     decimals,
-  //     mint,
-  //   });
+    // Create new token mint
+    const mint = generateSigner(umi);
 
-  //   if (initialSupply) {
-  //     builder = builder.add(
-  //       mintV1(umi, {
-  //         mint: mint.publicKey,
-  //         tokenStandard: TokenStandard.Fungible,
-  //         tokenOwner: fromWeb3JsPublicKey(agent.wallet_address),
-  //         amount: initialSupply * Math.pow(10, decimals),
-  //       }),
-  //     );
-  //   }
+    let builder = createFungible(umi, {
+      name,
+      uri,
+      symbol,
+      sellerFeeBasisPoints: {
+        basisPoints: 0n,
+        identifier: "%",
+        decimals: 2,
+      },
+      decimals,
+      mint,
+    });
 
-  //   builder.sendAndConfirm(umi, { confirm: { commitment: "finalized" } });
+    if (initialSupply) {
+      builder = builder.add(
+        mintV1(umi, {
+          mint: mint.publicKey,
+          tokenStandard: TokenStandard.Fungible,
+          tokenOwner: fromWeb3JsPublicKey(agent.wallet_address),
+          amount: initialSupply * Math.pow(10, decimals),
+        }),
+      );
+    }
 
-  //   return {
-  //     mint: toWeb3JsPublicKey(mint.publicKey),
-  //   };
-  // } catch (error: any) {
-  //   throw new Error(`Token deployment failed: ${error.message}`);
-  // }
+    builder.sendAndConfirm(umi, { confirm: { commitment: "finalized" } });
+
+    return {
+      mint: toWeb3JsPublicKey(mint.publicKey),
+    };
+  } catch (error: any) {
+    throw new Error(`Token deployment failed: ${error.message}`);
+  }
 }

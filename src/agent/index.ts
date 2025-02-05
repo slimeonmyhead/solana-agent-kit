@@ -149,6 +149,7 @@ import {
 import { AlloraInference, AlloraTopic } from "@alloralabs/allora-sdk";
 import { BaseWallet } from "../types/wallet";
 import Decimal from "decimal.js";
+import { Signer, Transaction } from "@metaplex-foundation/umi";
 /**
  * Main class for interacting with Solana blockchain
  * Provides a unified interface for token operations, NFT management, trading and more
@@ -181,6 +182,22 @@ export class SolanaAgentKit {
       signTransaction: adapter.signTransaction.bind(adapter),
       signAllTransactions: adapter.signAllTransactions.bind(adapter),
       payer: adapter as any,
+    };
+  }
+
+  getUmiSigner(): Signer {
+    const adapter = this.wallet;
+    return {
+      publicKey: adapter.publicKey.toBase58() as any,
+      signTransaction: (transaction: Transaction) => {
+        return adapter.signTransaction(transaction as any);
+      },
+      signAllTransactions: (transactions: Transaction[]) => {
+        return adapter.signAllTransactions(transactions as any) as Promise<any>;
+      },
+      signMessage: (message: Uint8Array) => {
+        return adapter.signMessage(message);
+      },
     };
   }
 

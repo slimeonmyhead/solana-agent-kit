@@ -7,6 +7,8 @@ import {
 } from "@solana/web3.js";
 
 import type { BaseWallet } from "../types/wallet";
+import { fromWeb3JsKeypair } from "@metaplex-foundation/umi-web3js-adapters";
+import { createWeb3JsEddsa } from "@metaplex-foundation/umi-eddsa-web3js";
 
 /**
  * Check if a transaction object is a VersionedTransaction or not
@@ -64,5 +66,8 @@ export class KeypairWallet implements BaseWallet {
       }
       return t;
     });
+  }
+  async signMessage(message: Uint8Array): Promise<Uint8Array> {
+    return createWeb3JsEddsa().sign(message, fromWeb3JsKeypair(this.payer));
   }
 }
