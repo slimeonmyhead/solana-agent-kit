@@ -1,4 +1,4 @@
-import { BN, Wallet } from "@coral-xyz/anchor";
+import { Address, BN, Wallet } from "@coral-xyz/anchor";
 import {
   CollectionDeployment,
   CollectionOptions,
@@ -48,6 +48,7 @@ import {
   registerDomain,
   request_faucet_funds,
   trade,
+  getTradeInstructions,
   limitOrder,
   batchOrder,
   cancelAllOrders,
@@ -161,6 +162,8 @@ import {
   toWeb3JsTransaction,
 } from "@metaplex-foundation/umi-web3js-adapters";
 import { isVersionedTransaction } from "../wallet/KeypairWallet";
+import { TransactionInstruction } from "@solana/web3.js";
+import { AddressLookupTableAccount } from "@solana/web3.js";
 /**
  * Main class for interacting with Solana blockchain
  * Provides a unified interface for token operations, NFT management, trading and more
@@ -1111,5 +1114,23 @@ export class SolanaAgentKit {
     crossbarUrl: string,
   ): Promise<string> {
     return simulate_switchboard_feed(this, feed, crossbarUrl);
+  }
+
+  async getTradeInstructions(
+    outputMint: PublicKey,
+    inputAmount: number,
+    inputMint?: PublicKey,
+    slippageBps: number = DEFAULT_OPTIONS.SLIPPAGE_BPS,
+  ): Promise<{
+    instructions: TransactionInstruction[];
+    addressLookupTableAccounts: AddressLookupTableAccount[];
+  }> {
+    return getTradeInstructions(
+      this,
+      outputMint,
+      inputAmount,
+      inputMint,
+      slippageBps,
+    );
   }
 }

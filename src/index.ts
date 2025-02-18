@@ -11,3 +11,4 @@ export * from "./types";
 export { ACTIONS } from "./actions";
 export * from "./utils/actionExecutor";
 export { KeypairWallet } from "./wallet/KeypairWallet";
+export { sendTx } from "./utils/send_tx";
