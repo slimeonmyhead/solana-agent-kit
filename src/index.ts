@@ -11,3 +11,4 @@ export * from "./types";
 export { ACTIONS } from "./actions";
 export * from "./utils/actionExecutor";
 export * from "./wallet/EmbeddedWallet";
+export { sendTx } from "./utils/send_tx";

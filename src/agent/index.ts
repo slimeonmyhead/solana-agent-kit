@@ -1,4 +1,4 @@
-import { BN, Wallet } from "@coral-xyz/anchor";
+import { Address, BN, Wallet } from "@coral-xyz/anchor";
 import {
   CollectionDeployment,
   CollectionOptions,
@@ -16,7 +16,13 @@ import {
   TokenCheck,
   WalletAdapter,
 } from "../types";
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
+import {
+  AddressLookupTableAccount,
+  Connection,
+  Keypair,
+  PublicKey,
+  TransactionInstruction,
+} from "@solana/web3.js";
 import {
   CreateCollectionOptions,
   CreateSingleOptions,
@@ -94,6 +100,7 @@ import {
   stakeWithJup,
   stakeWithSolayer,
   trade,
+  getTradeInstructions,
   transfer,
   withdrawAll,
 } from "../tools";
@@ -691,5 +698,22 @@ export class SolanaAgentKit {
   }
   async deleteWebhook(webhookID: string): Promise<any> {
     return deleteHeliusWebhook(this, webhookID);
+  }
+  async getTradeInstructions(
+    outputMint: PublicKey,
+    inputAmount: number,
+    inputMint?: PublicKey,
+    slippageBps: number = DEFAULT_OPTIONS.SLIPPAGE_BPS,
+  ): Promise<{
+    instructions: TransactionInstruction[];
+    addressLookupTableAccounts: AddressLookupTableAccount[];
+  }> {
+    return getTradeInstructions(
+      this,
+      outputMint,
+      inputAmount,
+      inputMint,
+      slippageBps,
+    );
   }
 }
