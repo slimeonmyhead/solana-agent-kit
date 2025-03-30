@@ -49,9 +49,10 @@ export async function sendTransactionWithPriorityFee(
 
       transaction.add(transferIx);
       const signedTx = await agent.wallet.signTransaction(transaction);
+      const heliusUrl = agent.config.HELIUS_RPC || 'https://mainnet.helius-rpc.com';
 
       const response = await fetch(
-        `https://mainnet.helius-rpc.com/?api-key=${agent.config.HELIUS_API_KEY}`,
+        `${heliusUrl}/?api-key=${agent.config.HELIUS_API_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -108,9 +109,10 @@ export async function sendTransactionWithPriorityFee(
       transaction.recentBlockhash = blockhash;
       transaction.lastValidBlockHeight = lastValidBlockHeight;
       transaction.feePayer = agent.wallet_address;
+      const heliusUrl = agent.config.HELIUS_RPC || 'https://mainnet.helius-rpc.com';
 
       const response = await fetch(
-        `https://mainnet.helius-rpc.com/?api-key=${agent.config.HELIUS_API_KEY}`,
+        `${heliusUrl}/?api-key=${agent.config.HELIUS_API_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

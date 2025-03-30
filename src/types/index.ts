@@ -9,6 +9,7 @@ export interface Config {
   JUPITER_FEE_BPS?: number;
   FLASH_PRIVILEGE?: string;
   HELIUS_API_KEY?: string;
+  HELIUS_RPC?: string;
 }
 
 export interface Creator {

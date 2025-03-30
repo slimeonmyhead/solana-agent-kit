@@ -19,7 +19,9 @@ export async function getAssetsByOwner(
       throw new Error("HELIUS_API_KEY not found in environment variables");
     }
 
-    const url = `https://mainnet.helius-rpc.com/?api-key=${apiKey}`;
+    const heliusUrl = agent.config.HELIUS_RPC || 'https://mainnet.helius-rpc.com';
+
+    const url = `${heliusUrl}/?api-key=${apiKey}`;
 
     const response = await fetch(url, {
       method: "POST",

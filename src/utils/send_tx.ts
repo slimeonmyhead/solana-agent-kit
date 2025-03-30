@@ -69,10 +69,11 @@ export async function getComputeBudgetInstructions(
 
     // Sign the transaction
     const signedTx = await agent.wallet.signTransaction(legacyTransaction);
+    const heliusUrl = agent.config.HELIUS_RPC || 'https://mainnet.helius-rpc.com';
 
     // Use Helius API for priority fee calculation
     const response = await fetch(
-      `https://mainnet.helius-rpc.com/?api-key=${agent.config.HELIUS_API_KEY}`,
+      `${heliusUrl}/?api-key=${agent.config.HELIUS_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
