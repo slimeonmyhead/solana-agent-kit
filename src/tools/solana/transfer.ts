@@ -1,4 +1,9 @@
-import { PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
+import {
+  PublicKey,
+  SystemProgram,
+  Transaction,
+  TransactionInstruction,
+} from "@solana/web3.js";
 import {
   createAssociatedTokenAccountInstruction,
   createTransferInstruction,
@@ -10,6 +15,8 @@ import {
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { SolanaAgentKit } from "../../index";
 import { sendTx } from "../..//utils/send_tx";
+
+export const MEMO_PROGRAM_ID = "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr";
 
 /**
  * Transfer SOL or SPL tokens to a recipient
@@ -24,9 +31,20 @@ export async function transfer(
   to: PublicKey,
   amount: number,
   mint?: PublicKey,
+  memo?: string,
 ): Promise<string> {
   try {
     let tx: string;
+    let memoInstruction: TransactionInstruction | undefined;
+    if (memo) {
+      memoInstruction = new TransactionInstruction({
+        keys: [
+          { pubkey: agent.wallet_address, isSigner: true, isWritable: true },
+        ],
+        programId: new PublicKey(MEMO_PROGRAM_ID),
+        data: Buffer.from(memo, "utf-8"),
+      });
+    }
 
     if (!mint) {
       // Transfer native SOL
@@ -38,6 +56,9 @@ export async function transfer(
         }),
       );
 
+      if (memoInstruction) {
+        transaction.add(memoInstruction);
+      }
       tx = await sendTx(agent, transaction.instructions);
     } else {
       const transaction = new Transaction();
@@ -72,6 +93,10 @@ export async function transfer(
           adjustedAmount,
         ),
       );
+
+      if (memoInstruction) {
+        transaction.add(memoInstruction);
+      }
 
       tx = await sendTx(agent, transaction.instructions);
     }
