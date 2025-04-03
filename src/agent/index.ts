@@ -198,8 +198,9 @@ export class SolanaAgentKit {
     to: PublicKey,
     amount: number,
     mint?: PublicKey,
+    memo?: string,
   ): Promise<string> {
-    return transfer(this, to, amount, mint);
+    return transfer(this, to, amount, mint, memo);
   }
 
   async registerDomain(name: string, spaceKB?: number): Promise<string> {

@@ -69,10 +69,11 @@ export async function getComputeBudgetInstructions(
 
     // Sign the transaction
     const signedTx = await agent.wallet.signTransaction(legacyTransaction);
+    const heliusUrl = agent.config.HELIUS_RPC_URL || 'https://mainnet.helius-rpc.com';
 
     // Use Helius API for priority fee calculation
     const response = await fetch(
-      `https://mainnet.helius-rpc.com/?api-key=${agent.config.HELIUS_API_KEY}`,
+      `${heliusUrl}/?api-key=${agent.config.HELIUS_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -94,9 +95,18 @@ export async function getComputeBudgetInstructions(
 
     const data = await response.json();
     if (data.error) {
-      throw new Error("Error fetching priority fee from Helius API");
+      console.log("Error fetching priority fee from Helius API:", data.error);
+      priorityFee = await agent.connection
+      .getRecentPrioritizationFees()
+      .then(
+        (fees) =>
+          fees.sort((a, b) => a.prioritizationFee - b.prioritizationFee)[
+            Math.floor(fees.length * feeTiers[feeTier])
+          ].prioritizationFee,
+      );
+    } else {
+      priorityFee = Math.floor(data.result.priorityFeeEstimate * 1.2);
     }
-    priorityFee = Math.floor(data.result.priorityFeeEstimate * 1.2);
   } else {
     // Use default implementation for priority fee calculation
     priorityFee = await agent.connection
